@@ -1,0 +1,9 @@
+# Evidencias de las reuniones sostenidas con el cliente.
+
+- Miercoles 26 de agosto
+ 
+Grabación de la reunión [aquí](https://teams.microsoft.com/l/meetingrecap?driveId=b%21FxL2MpxALUW-aKUOv6H75mXmeCcBuvpClqMfLzKJ1uHrwncSWhxNR4ym-yveT4uP&driveItemId=01TK4Z74K5V7SWZUSQY5BLY2ZSRGYS7LOM&sitePath=https%3A%2F%2Feafit-my.sharepoint.com%2F%3Av%3A%2Fg%2Fpersonal%2Fsvillav4_eafit_edu_co%2FIQBdr-Vs0lDHQrxrMomxL63MAYQAUqKcDc2U1OKcRmepNiQ&fileUrl=https%3A%2F%2Feafit-my.sharepoint.com%2F%3Av%3A%2Fg%2Fpersonal%2Fsvillav4_eafit_edu_co%2FIQBdr-Vs0lDHQrxrMomxL63MAYQAUqKcDc2U1OKcRmepNiQ&iCalUid=040000008200E00074C5B7101A82E0080000000032F6E3F5C234DD01000000000000000010000000BF77585B6BFBBF4CBDC4FDCB6B5F847F&threadId=19%3Ameeting_OGQ1MWQxMzUtZTY5Ny00YzkwLWI3N2QtN2RlYTVmYmQzYmI0%40thread.v2&organizerId=50e87a69-3def-449e-b087-37a1bbe41ec1&tenantId=99f7b55e-9cbe-467b-8143-919782918afb&callId=81f3ebc8-4025-4cc3-9ceb-d67a5521966b&threadType=Meeting&meetingType=Scheduled&subType=RecapSharingLink_RecapChiclet)
+
+- Jueves27 de agosto
+
+Grabación de la reunión [aquí](https://teams.microsoft.com/l/meetingrecap?driveId=b%21FxL2MpxALUW-aKUOv6H75mXmeCcBuvpClqMfLzKJ1uHrwncSWhxNR4ym-yveT4uP&driveItemId=01TK4Z74OCVBNDC3XSNJBJTGZCKIWOEZNU&sitePath=https%3A%2F%2Feafit-my.sharepoint.com%2F%3Av%3A%2Fg%2Fpersonal%2Fsvillav4_eafit_edu_co%2FIQDCqFoxbvJqQpmbIlIs4mW0AWGpN_oLumoxhP5P791aojo&fileUrl=https%3A%2F%2Feafit-my.sharepoint.com%2F%3Av%3A%2Fg%2Fpersonal%2Fsvillav4_eafit_edu_co%2FIQDCqFoxbvJqQpmbIlIs4mW0AWGpN_oLumoxhP5P791aojo&iCalUid=040000008200E00074C5B7101A82E0080000000032F6E3F5C234DD01000000000000000010000000BF77585B6BFBBF4CBDC4FDCB6B5F847F&threadId=19%3Ameeting_OGQ1MWQxMzUtZTY5Ny00YzkwLWI3N2QtN2RlYTVmYmQzYmI0%40thread.v2&organizerId=50e87a69-3def-449e-b087-37a1bbe41ec1&tenantId=99f7b55e-9cbe-467b-8143-919782918afb&callId=7e6a2d60-26ad-4162-a28e-a5140c1c85d5&threadType=Meeting&meetingType=Scheduled&subType=RecapSharingLink_RecapChiclet)
