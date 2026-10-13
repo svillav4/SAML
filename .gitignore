@@ -1,0 +1,10 @@
+# Credenciales locales. La plantilla Ingesta/.env.example SI se versiona.
+.env
+
+# Entorno virtual de Python del proyecto y bytecode generado
+.venv/
+__pycache__/
+
+# Archivos del cliente con datos de terceros (Excel de referencia,
+# archivos de permisos de transito de Movilidad). Nunca se versionan.
+datos/

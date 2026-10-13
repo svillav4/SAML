@@ -1,0 +1,5 @@
+# El contexto de build es la raiz del repositorio, pero la imagen solo necesita
+# los requirements. Todo lo demas (.env, CSV, Excel, .venv, docs, .git) se excluye.
+*
+!Ingesta/requirements.txt
+!Transformacion/requirements.txt

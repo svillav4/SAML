@@ -1,0 +1,58 @@
+# Instancia LOCAL de n8n para probar el workflow del proceso SAML.
+# Proyecto Compose propio ("saml-n8n"), independiente de cualquier otro stack.
+#
+# Uso (desde la raiz del repositorio, contexto Docker desktop-linux):
+#   docker --context desktop-linux compose -f n8n/docker-compose.yml up -d --build
+#   docker --context desktop-linux compose -f n8n/docker-compose.yml stop
+name: saml-n8n
+
+services:
+  n8n:
+    build:
+      context: ..
+      dockerfile: n8n/Dockerfile
+    image: saml-n8n:2.42.7-py3.14.7
+    container_name: saml-n8n
+    restart: "no"
+    ports:
+      # Solo en la interfaz local del equipo: http://localhost:5678
+      - "127.0.0.1:5678:5678"
+    environment:
+      N8N_HOST: localhost
+      N8N_PORT: "5678"
+      N8N_PROTOCOL: http
+      N8N_EDITOR_BASE_URL: http://localhost:5678/
+      WEBHOOK_URL: http://localhost:5678/
+      # Safari no trata http://localhost como origen seguro y rechaza la cookie
+      # "secure" de n8n. Esta instancia solo escucha en 127.0.0.1 y no usa HTTPS,
+      # asi que la cookie de sesion se envia sin el atributo Secure.
+      N8N_SECURE_COOKIE: "false"
+      GENERIC_TIMEZONE: America/Bogota
+      TZ: America/Bogota
+      # n8n 2.x desactiva por defecto Execute Command y Local File Trigger.
+      # Una lista vacia los habilita; el workflow necesita Execute Command para
+      # lanzar el proceso de Python dentro de este contenedor.
+      NODES_EXCLUDE: "[]"
+      # Las expresiones y el nodo Code no pueden leer las variables de entorno del contenedor.
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "true"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      # Sin telemetria ni consultas a servicios externos de n8n.
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_TEMPLATES_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+    volumes:
+      # Configuracion, base de datos y clave de cifrado de esta instancia.
+      - saml_n8n_data:/home/node/.n8n
+      # Codigo del proyecto en solo lectura (incluye Ingesta/.env, que solo lee Python
+      # en el modo --actualizar; no se carga como variables de entorno de n8n).
+      - ../Ingesta:/proyecto/Ingesta:ro
+      - ../Transformacion:/proyecto/Transformacion:ro
+      - ../n8n:/proyecto/n8n:ro
+      # Unicas carpetas con escritura: CSV de la ingesta y Excel generados.
+      - ../Ingesta/output:/proyecto/Ingesta/output
+      - ../datos/intermedio:/proyecto/datos/intermedio
+
+volumes:
+  saml_n8n_data:
+    name: saml_n8n_data

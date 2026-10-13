@@ -22,8 +22,20 @@ SAML/
 ├── docs/
 │   ├── Entregable 1/
 │   └── Entregable 2/
+├── Ingesta/          # extraccion desde la API de licitaciones.info -> Ingesta/output/*.csv
+├── Transformacion/   # limpieza y Excel intermedio -> datos/intermedio/*.xlsx
+├── n8n/              # n8n local en Docker + workflow (disparadores manuales del proceso local)
 └── README.md
 ```
+
+### Ingesta y Transformacion:
+
+- Ingesta: configuración en `Ingesta/.env` (plantilla en `Ingesta/.env.example`); se ejecuta con `python extract.py` desde `Ingesta/`.
+- Transformacion: genera el Excel intermedio de licitaciones adjudicadas (versión de demostración). Instrucciones en [Transformacion/README.md](Transformacion/README.md).
+  - Demo con los CSV ya guardados (no consulta el portal): `.venv/bin/python Transformacion/ejecutar_proceso.py`
+  - Actualizar desde Licitaciones.info y generar el Excel: `.venv/bin/python Transformacion/ejecutar_proceso.py --actualizar`
+- n8n: instancia local en Docker (http://localhost:5678) con el workflow "Proceso completo" (ingesta desde Licitaciones.info y luego Excel) y otro de demo con CSV locales. Instrucciones en [n8n/README.md](n8n/README.md).
+- `datos/` y `.env` no se versionan: contienen credenciales, archivos del cliente y resultados generados.
 
 ### docs:
 

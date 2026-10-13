@@ -1,0 +1,89 @@
+{
+  "id": "samlLicitaciones",
+  "name": "SAML - Proceso completo: Licitaciones.info a Excel intermedio",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Proceso completo (consulta Licitaciones.info)\nPulsa **Execute workflow** (o el boton de play del disparador).\n\n1. Ingesta: consulta Licitaciones.info con `Ingesta/.env` y guarda un CSV nuevo en `Ingesta/output/`.\n2. Solo si la ingesta termina bien: limpieza, filtro **Adjudicado** y Excel nuevo en `datos/intermedio/`.\n3. Verificacion del Excel. El nodo **Resultado** muestra el nombre y la ruta del archivo.\n\nSi la ingesta falla (credenciales, red, API), la ejecucion falla y NO se genera Excel.",
+        "height": 200,
+        "width": 820
+      },
+      "id": "63eae969-73ce-4984-b9f5-2bba66d822b5",
+      "name": "Nota",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -240
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "e5ea27a9-1ee4-4d33-92c2-4403460c089f",
+      "name": "Ejecutar proceso completo",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "command": "cd /proyecto && /opt/saml-venv/bin/python Transformacion/ejecutar_proceso.py --actualizar 2>&1; echo \"CODIGO_SALIDA=$?\""
+      },
+      "id": "35156026-89ce-41da-8b5d-c668736f1596",
+      "name": "Ingesta (Licitaciones.info) y luego Excel",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        280,
+        0
+      ],
+      "notes": "Primero ejecuta Ingesta/extract.py; solo si termina bien limpia los datos y genera el Excel.",
+      "notesInFlow": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Evalua la salida de Transformacion/ejecutar_proceso.py y resume el resultado.\n// Falla la ejecucion si el codigo de salida no es 0, si falta el Excel o si la verificacion no es OK.\nconst EXIGIR_INGESTA = true;\nconst resultados = [];\nfor (const item of $input.all()) {\n  const stdout = String(item.json.stdout || '');\n  const lineas = stdout.split('\\n');\n  const coincidencia = stdout.match(/CODIGO_SALIDA=(\\d+)\\s*$/);\n  const codigo = coincidencia ? Number(coincidencia[1]) : null;\n  const buscar = (prefijo) => lineas.find((l) => l.startsWith(prefijo)) || '';\n  const modo = buscar('=== MODO');\n  const ingesta = buscar('Ingesta correcta:').replace('Ingesta correcta:', '').trim();\n  const verificacion = buscar('Verificacion:');\n  const excel = buscar('Excel generado:').replace('Excel generado:', '').trim();\n  const csv = lineas.filter((l) => l.trim().startsWith('- Ingesta/output/')).map((l) => l.trim().slice(2));\n  const posIngesta = ingesta ? stdout.indexOf('Ingesta correcta:') : -1;\n  const posExcel = excel ? stdout.indexOf('Excel generado:') : -1;\n\n  const problemas = [];\n  if (codigo !== 0) problemas.push(`el proceso termino con codigo ${codigo}`);\n  if (EXIGIR_INGESTA && !ingesta) problemas.push('no se confirmo una ingesta correcta');\n  if (EXIGIR_INGESTA && ingesta && excel && posIngesta > posExcel) problemas.push('el Excel aparece antes que la ingesta');\n  if (!excel) problemas.push('no se genero Excel');\n  if (!verificacion.startsWith('Verificacion: OK')) problemas.push('la verificacion no es OK');\n  if (problemas.length) {\n    const detalle = lineas.filter((l) => /ERROR|FALLO|faltan valores|Verificacion|marcado para revision/.test(l)).join('\\n');\n    throw new Error(`No hay un Excel valido de esta ejecucion: ${problemas.join('; ')}.\\n` + (detalle || stdout.slice(-2000)));\n  }\n  const nombre = excel.split('/').pop();\n  resultados.push({\n    json: {\n      modo,\n      ingesta_csv_nuevo: ingesta || '(no aplica: demostracion con CSV existentes)',\n      excel_nombre: nombre,\n      excel_ruta_en_el_repositorio: excel,\n      verificacion,\n      csv_consolidados: csv,\n      codigo_salida: codigo,\n    },\n  });\n}\nreturn resultados;\n"
+      },
+      "id": "d8e2acb4-29c1-4314-8c9b-b89fb2f11822",
+      "name": "Resultado: Excel generado",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Ejecutar proceso completo": {
+      "main": [
+        [
+          {
+            "node": "Ingesta (Licitaciones.info) y luego Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ingesta (Licitaciones.info) y luego Excel": {
+      "main": [
+        [
+          {
+            "node": "Resultado: Excel generado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
