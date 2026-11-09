@@ -18,6 +18,8 @@ import logging
 from typing import Any, Optional
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
@@ -40,6 +42,18 @@ class LicitacionesAPIClient:
         self._token: Optional[str] = None
         self._token_expires_at: Optional[str] = None
         self._session = requests.Session()
+        # Reintentos ante fallos pasajeros de red o DNS y respuestas 429/502/503/504
+        # (esperas de 2, 4 y 8 segundos). Un 401 o un 4xx no se reintenta.
+        reintentos = Retry(
+            total=3,
+            connect=3,
+            read=2,
+            backoff_factor=2,
+            status_forcelist=(429, 502, 503, 504),
+            allowed_methods=frozenset({"GET", "POST"}),
+            raise_on_status=False,
+        )
+        self._session.mount("https://", HTTPAdapter(max_retries=reintentos))
         # Algunos WAF/Cloudflare bloquean el User-Agent por defecto de requests
         # (python-requests/x.y) en ciertos endpoints. Usamos headers de un
         # navegador normal para reducir la probabilidad de que nos bloqueen.

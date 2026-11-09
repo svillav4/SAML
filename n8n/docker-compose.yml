@@ -49,9 +49,11 @@ services:
       - ../Ingesta:/proyecto/Ingesta:ro
       - ../Transformacion:/proyecto/Transformacion:ro
       - ../n8n:/proyecto/n8n:ro
-      # Unicas carpetas con escritura: CSV de la ingesta y Excel generados.
+      # Los 4 Excel maestros de GRECO, en solo lectura: SAML nunca los modifica.
+      - ../datos/maestros:/proyecto/datos/maestros:ro
+      # Unicas carpetas con escritura: CSV de la ingesta y archivos generados por asesor.
       - ../Ingesta/output:/proyecto/Ingesta/output
-      - ../datos/intermedio:/proyecto/datos/intermedio
+      - ../datos/salida:/proyecto/datos/salida
 
 volumes:
   saml_n8n_data:

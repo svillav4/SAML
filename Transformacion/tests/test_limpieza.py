@@ -1,4 +1,4 @@
-"""Pruebas de la limpieza intermedia con datos SINTETICOS (no son datos reales).
+"""Pruebas de la limpieza con datos SINTETICOS (no son datos reales).
 
 Los CSV se escriben con el mismo formato que Ingesta/extract.py: listas
 anidadas guardadas como texto de Python.
@@ -9,15 +9,11 @@ Uso (desde la raiz del proyecto):
 from __future__ import annotations
 
 import csv
-import hashlib
-import subprocess
 import sys
 import tempfile
-import time
 import unittest
 from pathlib import Path
 
-from openpyxl import load_workbook
 
 CARPETA = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(CARPETA))
@@ -111,11 +107,12 @@ class LimpiezaTest(unittest.TestCase):
 
         r = lim.procesar(self.dir)
 
-        self.assertEqual(r.datos[0]["Empresa"], "EMPRESA A | UNION TEMPORAL B")
+        self.assertEqual(r.datos[0]["Empresa (ganadores)"], "EMPRESA A | UNION TEMPORAL B")
+        self.assertEqual(r.datos[0]["_ganadores"], ["EMPRESA A", "UNION TEMPORAL B"])
         self.assertEqual([g["Empresa"] for g in r.ganadores], ["EMPRESA A", "UNION TEMPORAL B"])
         self.assertEqual([g["Repeticiones en origen"] for g in r.ganadores], [2, 1])
         self.assertEqual([g["Está en proponentes"] for g in r.ganadores], ["Sí", "No"])
-        self.assertIsNone(r.ganadores[1]["Integrantes del consorcio"])
+        self.assertEqual([g["Es consorcio (origen)"] for g in r.ganadores], ["No", "Sí"])
 
     def test_campos_vacios_no_se_inventan_ni_eliminan_el_registro(self) -> None:
         escribir_csv(
@@ -130,53 +127,28 @@ class LimpiezaTest(unittest.TestCase):
         fila = r.datos[0]
         self.assertIsNone(fila["Fecha vencimiento (origen)"])
         self.assertIsNone(fila["Valor Millones"])
-        self.assertEqual(fila["Empresa"], "")
-        self.assertIsNone(fila["Fecha Adjudicación"])
+        self.assertEqual(fila["Empresa (ganadores)"], "")
+        self.assertEqual((fila["_inicios"], fila["_fines"]), ([], []))
         campos = {i["Campo"] for i in r.incidencias if i["Alcance"] == "Registro"}
         self.assertTrue({"FechaVencimiento", "Valor", "ganadores"} <= campos)
 
-    def test_fecha_adjudicacion_no_se_toma_del_cronograma(self) -> None:
-        escribir_csv(self.dir, "licitaciones_20260101_080000.csv", [proceso("1")])
+    def test_lee_del_cronograma_adjudicacion_inicio_y_fin_de_la_ejecucion(self) -> None:
+        cronogramas = [
+            {"nombre": "Audiencia de Adjudicación", "fecha": "20/03/2026 - 10:00 AM"},
+            {"nombre": "Fecha de inicio de ejecución del contrato", "fecha": "06/04/2026 - 08:00 AM"},
+            {"nombre": "Aprobación de Póliza e inicio de ejecución del contrato", "fecha": "06/04/2026 - 05:00 PM"},
+            {"nombre": "Plazo de ejecución del contrato", "fecha": "30/09/2026 - 11:59 PM"},
+            {"nombre": "Firma del Contrato", "fecha": "01/04/2026 - 11:59 PM"},
+        ]
+        escribir_csv(self.dir, "licitaciones_20260101_080000.csv", [proceso("1", cronogramas=cronogramas)])
 
         fila = lim.procesar(self.dir).datos[0]
 
-        self.assertIsNone(fila["Fecha Adjudicación"])
-        self.assertEqual(fila["Adjudicación programada (cronograma)"], "20/03/2026 10:00")
-        self.assertEqual(fila["Entidad"], "ENTIDAD DE PRUEBA")
-
-    def test_excel_sin_campos_excluidos_y_sin_sobrescribir(self) -> None:
-        entrada = self.dir / "output"
-        entrada.mkdir()
-        csv_origen = escribir_csv(entrada, "licitaciones_20260101_080000.csv", [proceso("1"), proceso("2")])
-        hash_antes = hashlib.sha256(csv_origen.read_bytes()).hexdigest()
-        salida = self.dir / "intermedio"
-        comando = [
-            sys.executable,
-            str(CARPETA / "generar_excel_intermedio.py"),
-            "--entrada",
-            str(entrada),
-            "--salida",
-            str(salida),
-        ]
-
-        subprocess.run(comando, check=True, capture_output=True, text=True)
-
-        self.assertEqual(hashlib.sha256(csv_origen.read_bytes()).hexdigest(), hash_antes)
-        (libro_ruta,) = salida.glob("licitaciones_intermedio_*.xlsx")
-        libro = load_workbook(libro_ruta)
-        self.assertEqual(libro.sheetnames, ["Datos", "Ganadores", "Incidencias", "Resumen"])
-        self.assertEqual(libro["Datos"].max_row, 3)
-        textos = [str(c.value) for hoja in libro for fila in hoja.iter_rows() for c in fila if c.value is not None]
-        self.assertFalse(any(JWT_FALSO in t for t in textos))
-        encabezados = {c.value for c in libro["Datos"][1]} | {c.value for c in libro["Ganadores"][1]}
-        self.assertFalse(encabezados & {"jwt_contratista_id", "pivot", "leido"})
-
-        # Una nueva ejecucion crea otro archivo y no toca el anterior.
-        contenido_antes = libro_ruta.read_bytes()
-        time.sleep(1.1)
-        subprocess.run(comando, check=True, capture_output=True, text=True)
-        self.assertEqual(len(list(salida.glob("licitaciones_intermedio_*.xlsx"))), 2)
-        self.assertEqual(libro_ruta.read_bytes(), contenido_antes)
+        self.assertEqual(fila["Adjudicación programada (cronograma)"], "20/03/2026")
+        self.assertEqual(fila["Inicio ejecución (cronograma)"], "06/04/2026")
+        self.assertEqual(fila["Fin ejecución (cronograma)"], "30/09/2026")
+        self.assertEqual(len(fila["_inicios"]), 1)
+        self.assertEqual(fila["Entidad contratante"], "ENTIDAD DE PRUEBA")
 
 
 if __name__ == "__main__":

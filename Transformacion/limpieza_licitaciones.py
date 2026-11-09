@@ -1,14 +1,13 @@
-"""Limpieza intermedia de licitaciones adjudicadas (version local de demostracion).
+"""Limpieza de las licitaciones adjudicadas que trae la ingesta.
 
 Lee los CSV generados por Ingesta/extract.py, los consolida por idContrato y
-prepara las filas de las hojas del Excel intermedio (Datos, Ganadores e
-Incidencias) junto con las cifras de la hoja Resumen. Solo lee los CSV: no los
-modifica ni escribe archivos. La escritura del Excel esta en
-generar_excel_intermedio.py.
+deja un registro limpio por proceso adjudicado (con sus ganadores y las fechas
+de ejecucion programadas en el cronograma), mas las incidencias encontradas.
+Solo lee los CSV: no los modifica ni escribe archivos.
 
-Las columnas de "Obras V6" son provisionales: se tomaron de una captura del
-archivo de GRECO y deben confirmarse con el .xlsx original. Esta etapa no
-reemplaza la integracion final con Obras V6, Supabase ni n8n.
+El reparto de cada proceso al archivo de un asesor y su conversion a las 71
+columnas de GRECO estan en obras_asesores.py; la escritura de los Excel, en
+generar_archivos_asesores.py.
 """
 from __future__ import annotations
 
@@ -27,13 +26,16 @@ from typing import Any, Optional
 ESTADO_ADJUDICADO = "Adjudicado"
 PATRON_ARCHIVO = re.compile(r"^licitaciones_(\d{8}_\d{6})\.csv$")
 PATRON_HITO_ADJUDICACION = re.compile(r"adjudic", re.IGNORECASE)
+# Hitos del cronograma con la fecha programada de inicio y de fin de la ejecucion del contrato.
+PATRON_HITO_INICIO = re.compile(r"inicio\s+de\s+(la\s+)?ejecuci", re.IGNORECASE)
+PATRON_HITO_FIN = re.compile(r"^\s*(plazo\s+de\s+ejecuci|ejecuci[oó]n\s+del\s+contrato)", re.IGNORECASE)
 PATRON_DIRECCION = re.compile(
     r"\b(calle|carrera|cra\.?|cl\.?|kr\.?|avenida|av\.|diagonal|transversal)\s*\d", re.IGNORECASE
 )
 PATRON_POSIBLE_NIT = re.compile(r"\bNIT\b|\d{9}", re.IGNORECASE)
 LONGITUD_MAXIMA_OBJETO = 500  # la API parece recortar "Objeto" a 500 caracteres
 
-# Campos del CSV que nunca se llevan al Excel ni a los mensajes: identificadores
+# Campos del CSV que nunca se llevan a los Excel ni a los mensajes: identificadores
 # firmados de la plataforma (jwt_contratista_id, pivot) y el estado del usuario
 # en licitaciones.info. El CSV original los conserva intactos.
 CAMPOS_EXCLUIDOS = (
@@ -51,140 +53,71 @@ CAMPOS_EXCLUIDOS = (
     "alias_fuente",
 )
 
-# Estado de cada columna; tambien define el color del encabezado en el Excel.
-MAPEADO = "Mapeado"
-PROVISIONAL = "Provisional"
-SIN_FUENTE = "Sin fuente"
-MANUAL = "Manual GRECO"
-CALCULADO = "Calculado GRECO"
-TRAZABILIDAD = "Trazabilidad"
-
 
 @dataclass(frozen=True)
 class Columna:
     nombre: str
-    estado: str
     origen: str
     regla: str
 
 
-_MANUAL = "Lo diligencia el equipo comercial de GRECO; no proviene de fuentes públicas."
-_CALCULADO = "Depende de fórmulas o datos del archivo original de GRECO; se deja vacío."
-
-# Orden y nombres provisionales tomados de la captura de "Obras V6".
-COLUMNAS_GRECO = (
-    Columna("Entidad", MAPEADO, "EntidadContratante", "Texto de origen sin espacios sobrantes."),
-    Columna("Localidad", SIN_FUENTE, "-", "La API solo informa departamento y municipio (ver 'Ubicación (origen)'). No se infiere."),
-    Columna("Latitud", SIN_FUENTE, "-", "No hay coordenadas en origen. No se usa geocodificación."),
-    Columna("Longitud", SIN_FUENTE, "-", "No hay coordenadas en origen. No se usa geocodificación."),
-    Columna("Asesor", MANUAL, "-", _MANUAL),
-    Columna("Despacho/Disposición", MANUAL, "-", _MANUAL),
-    Columna("Contactada", MANUAL, "-", _MANUAL),
-    Columna(
-        "NIT",
-        SIN_FUENTE,
-        "-",
-        "Ningún campo de la API contiene el NIT. 'id_contratista_verificado' es un ID interno de "
-        "licitaciones.info (2 a 6 dígitos), no un NIT.",
-    ),
-    Columna(
-        "Empresa",
-        PROVISIONAL,
-        "ganadores[].nombreEntidad",
-        "Nombre del ganador; si hay varios, separados por ' | '. Detalle en la hoja Ganadores.",
-    ),
-    Columna("Notas", MANUAL, "-", _MANUAL),
-    Columna(
-        "Nombre de la Obra",
-        SIN_FUENTE,
-        "-",
-        "Pendiente de confirmar con Obras V6. Candidato: 'Objeto (origen)'. "
-        "'Nombre (origen)' es la modalidad más el código del proceso.",
-    ),
-    Columna(
-        "Contrato No",
-        SIN_FUENTE,
-        "-",
-        "La API no trae número de contrato; 'CodigoProceso' es el código del proceso de selección.",
-    ),
-    Columna(
-        "Valor Millones",
-        MAPEADO,
-        "Valor",
-        "Valor (en pesos) / 1.000.000. Un Valor de 0 se deja vacío y se registra como incidencia.",
-    ),
-    Columna(
-        "Fecha Adjudicación",
-        SIN_FUENTE,
-        "-",
-        "El cronograma solo trae fechas programadas, a veces varias por proceso; no se identifica la "
-        "fecha real con certeza. Ver 'Adjudicación programada (cronograma)'.",
-    ),
-    Columna("Avance %", CALCULADO, "-", _CALCULADO),
-    Columna("Meses por Terminar", CALCULADO, "-", _CALCULADO),
-    Columna("Valor por Ejecutar", CALCULADO, "-", _CALCULADO),
-    Columna("Potencial Infraestructura", CALCULADO, "-", _CALCULADO),
-    Columna("Meta 25% Material", CALCULADO, "-", _CALCULADO),
-    Columna("MS Greco", CALCULADO, "-", _CALCULADO),
-)
-
-COLUMNAS_TRAZABILIDAD = (
-    Columna("idContrato", TRAZABILIDAD, "idContrato", "Clave del proceso en licitaciones.info; única en esta hoja."),
-    Columna("CodigoProceso", TRAZABILIDAD, "CodigoProceso", "Código del proceso en SECOP; se conserva como texto."),
-    Columna("Fuente", TRAZABILIDAD, "nombre_fuente", "Fuente original del proceso (SECOP I / SECOP II)."),
-    Columna("Enlace", TRAZABILIDAD, "link", "Ficha del proceso en licitaciones.info."),
-    Columna("Nombre (origen)", TRAZABILIDAD, "Nombre", "Modalidad y código del proceso, tal como llegan."),
-    Columna("Objeto (origen)", TRAZABILIDAD, "Objeto", "Descripción del contrato; espacios sobrantes normalizados."),
-    Columna("Valor (origen, pesos)", TRAZABILIDAD, "Valor", "Valor tal como llega de la API."),
-    Columna("Fecha publicación (origen)", TRAZABILIDAD, "FechaPublicacion", "No es la fecha de adjudicación."),
-    Columna("Fecha vencimiento (origen)", TRAZABILIDAD, "FechaVencimiento", "No es la fecha de adjudicación."),
-    Columna("Ubicación (origen)", TRAZABILIDAD, "TextoDepartamento", "Departamento : municipios, sin modificar."),
-    Columna("Direccion", TRAZABILIDAD, "-", "La API no trae un campo de dirección; queda vacío."),
-    Columna("Num. ganadores", TRAZABILIDAD, "ganadores", "Ganadores distintos del proceso."),
-    Columna("Num. proponentes", TRAZABILIDAD, "proponentes", "Proponentes registrados en el proceso."),
+# Columnas del registro limpio de cada proceso (hoja "Procesos" del Excel de revision).
+COLUMNAS_PROCESOS = (
+    Columna("idContrato", "idContrato", "Clave del proceso en licitaciones.info; única por proceso."),
+    Columna("CodigoProceso", "CodigoProceso", "Código del proceso en SECOP; se conserva como texto."),
+    Columna("Entidad contratante", "EntidadContratante", "Texto de origen sin espacios sobrantes."),
+    Columna("Objeto", "Objeto", "Descripción del contrato; espacios sobrantes normalizados."),
+    Columna("Empresa (ganadores)", "ganadores[].nombreEntidad", "Ganadores distintos, separados por ' | '."),
+    Columna("Valor Millones", "Valor", "Valor (en pesos) / 1.000.000. Un Valor de 0 queda vacío y se registra."),
+    Columna("Valor (origen, pesos)", "Valor", "Valor tal como llega de la API."),
+    Columna("Ubicación (origen)", "TextoDepartamento", "Departamento : municipios, sin modificar."),
+    Columna("Fuente", "nombre_fuente", "Fuente original del proceso (SECOP I / SECOP II)."),
+    Columna("Enlace", "link", "Ficha del proceso en licitaciones.info."),
+    Columna("Nombre (origen)", "Nombre", "Modalidad y código del proceso, tal como llegan."),
+    Columna("Fecha publicación (origen)", "FechaPublicacion", "No es la fecha de adjudicación."),
+    Columna("Fecha vencimiento (origen)", "FechaVencimiento", "No es la fecha de adjudicación."),
+    Columna("Num. ganadores", "ganadores", "Ganadores distintos del proceso."),
+    Columna("Num. proponentes", "proponentes", "Proponentes registrados en el proceso."),
     Columna(
         "Adjudicación programada (cronograma)",
-        TRAZABILIDAD,
         "cronogramas[] con 'adjudic' en el hito",
         "Fechas programadas, no confirmadas; no se usan como Fecha Adjudicación.",
     ),
-    Columna("Estado (origen)", TRAZABILIDAD, "estado_agrupado", "Solo se incluyen procesos 'Adjudicado'."),
-    Columna("Archivo origen", TRAZABILIDAD, "-", "CSV de Ingesta/output del que proviene la fila."),
-    Columna("Fecha extracción", TRAZABILIDAD, "-", "Fecha y hora de la ingesta, tomada del nombre del CSV."),
+    Columna(
+        "Inicio ejecución (cronograma)",
+        "cronogramas[] 'inicio de ejecución'",
+        "Fecha programada de inicio; solo si el cronograma trae una única fecha.",
+    ),
+    Columna(
+        "Fin ejecución (cronograma)",
+        "cronogramas[] 'plazo de ejecución' / 'ejecución del contrato'",
+        "Fecha programada de fin; solo si el cronograma trae una única fecha.",
+    ),
+    Columna("Estado (origen)", "estado_agrupado", "Solo se incluyen procesos 'Adjudicado'."),
+    Columna("Archivo origen", "-", "CSV de Ingesta/output del que proviene la fila."),
+    Columna("Fecha extracción", "-", "Fecha y hora de la ingesta, tomada del nombre del CSV."),
 )
 
-COLUMNAS_DATOS = COLUMNAS_GRECO + COLUMNAS_TRAZABILIDAD
-
 COLUMNAS_GANADORES = (
-    Columna("idContrato", TRAZABILIDAD, "ganadores[].idContrato", "Relaciona con la hoja Datos."),
-    Columna("CodigoProceso", TRAZABILIDAD, "CodigoProceso", "Relaciona con la hoja Datos."),
-    Columna("Orden", TRAZABILIDAD, "-", "Posición del ganador en la lista de origen."),
-    Columna("Empresa", PROVISIONAL, "ganadores[].nombreEntidad", "Nombre del ganador sin espacios sobrantes."),
-    Columna("NIT", SIN_FUENTE, "-", "No disponible en la API."),
-    Columna("Es consorcio (origen)", MAPEADO, "ganadores[].es_consorcio", "Sí / No / Sin dato."),
-    Columna(
-        "Integrantes del consorcio",
-        SIN_FUENTE,
-        "-",
-        "La API solo trae el nombre del consorcio, no sus integrantes. No se infieren.",
-    ),
-    Columna("Está en proponentes", TRAZABILIDAD, "proponentes[].idProponente", "Si el ganador figura entre los proponentes."),
-    Columna("ID proponente (licitaciones.info)", TRAZABILIDAD, "ganadores[].idProponente", "Identificador interno de la plataforma."),
+    Columna("idContrato", "ganadores[].idContrato", "Relaciona con la hoja Procesos."),
+    Columna("CodigoProceso", "CodigoProceso", "Relaciona con la hoja Procesos."),
+    Columna("Orden", "-", "Posición del ganador en la lista de origen."),
+    Columna("Empresa", "ganadores[].nombreEntidad", "Nombre del ganador sin espacios sobrantes."),
+    Columna("Es consorcio (origen)", "ganadores[].es_consorcio", "Sí / No / Sin dato."),
+    Columna("Está en proponentes", "proponentes[].idProponente", "Si el ganador figura entre los proponentes."),
+    Columna("ID proponente (licitaciones.info)", "ganadores[].idProponente", "Identificador interno de la plataforma."),
     Columna(
         "ID contratista verificado (licitaciones.info)",
-        TRAZABILIDAD,
         "ganadores[].id_contratista_verificado",
         "Identificador interno de la plataforma; no es un NIT.",
     ),
-    Columna("Repeticiones en origen", TRAZABILIDAD, "-", "Veces que la misma entrada aparece en la lista de ganadores."),
+    Columna("Repeticiones en origen", "-", "Veces que la misma entrada aparece en la lista de ganadores."),
 )
 
 COLUMNAS_INCIDENCIAS = ("Tipo", "Alcance", "idContrato", "CodigoProceso", "Hoja", "Campo", "Detalle")
 
 # Tipos de incidencia
 INC_SIN_DATO = "Campo sin dato en origen"
-INC_SIN_FUENTE = "Columna sin fuente"
-INC_PROVISIONAL = "Mapeo provisional"
 INC_CALIDAD = "Calidad de datos"
 INC_REVISION = "Revisión sugerida"
 INC_DUPLICADO = "Duplicado"
@@ -238,7 +171,7 @@ def listar_csvs(directorio: Path) -> list[ArchivoFuente]:
 
 
 def leer_filas(archivo: ArchivoFuente) -> list[dict[str, str]]:
-    csv.field_size_limit(sys.maxsize)
+    csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
     with archivo.ruta.open(newline="", encoding="utf-8") as f:
         lector = csv.DictReader(f)
         if lector.fieldnames == ["Sin resultados"]:
@@ -281,9 +214,9 @@ def lista_anidada(valor: str) -> list:
 
 
 def si_no(valor: Any) -> str:
-    if valor is True:
+    if valor is True or str(valor).strip().lower() == "true":
         return "Sí"
-    if valor is False:
+    if valor is False or str(valor).strip().lower() == "false":
         return "No"
     return "Sin dato"
 
@@ -305,7 +238,7 @@ class _Registro:
         alcance: str = "Registro",
         id_contrato: str = "",
         codigo: str = "",
-        hoja: str = "Datos",
+        hoja: str = "Procesos",
         campo: str = "",
     ) -> None:
         self.incidencias.append(
@@ -371,33 +304,40 @@ def consolidar(archivos: list[ArchivoFuente], registro: _Registro) -> tuple[list
     return list(por_id.values()), dict(conteo)
 
 
-def _resumen_adjudicacion(cronogramas: list, registro: _Registro, id_contrato: str, codigo: str) -> str:
+def _fechas_de_hitos(
+    cronogramas: list, patron: re.Pattern, registro: _Registro, id_contrato: str, codigo: str
+) -> list[datetime]:
+    """Fechas distintas (por dia) de los hitos del cronograma cuyo nombre cumple el patron."""
     fechas: set[datetime] = set()
     for hito in cronogramas:
-        if not isinstance(hito, dict) or not PATRON_HITO_ADJUDICACION.search(str(hito.get("nombre", ""))):
+        if not isinstance(hito, dict) or not patron.search(str(hito.get("nombre", ""))):
             continue
         try:
             fechas.add(fecha_cronograma(str(hito.get("fecha", ""))))
         except ValueError:
             registro.agregar(
                 INC_NO_TRANSFORMABLE,
-                "Fecha de un hito de adjudicación con formato no reconocido.",
+                f"Fecha del hito '{limpiar_texto(hito.get('nombre'))[:60]}' con formato no reconocido.",
                 id_contrato=id_contrato,
                 codigo=codigo,
                 campo="cronogramas",
             )
+    por_dia = {f.replace(hour=0, minute=0, second=0, microsecond=0) for f in fechas}
+    return sorted(por_dia)
+
+
+def _resumen_fechas(fechas: list[datetime]) -> str:
     if not fechas:
         return ""
-    ordenadas = sorted(fechas)
-    if len(ordenadas) == 1:
-        return ordenadas[0].strftime("%d/%m/%Y %H:%M")
-    return f"{len(ordenadas)} fechas, de {ordenadas[0]:%d/%m/%Y} a {ordenadas[-1]:%d/%m/%Y}"
+    if len(fechas) == 1:
+        return fechas[0].strftime("%d/%m/%Y")
+    return f"{len(fechas)} fechas, de {fechas[0]:%d/%m/%Y} a {fechas[-1]:%d/%m/%Y}"
 
 
 def _transformar_ganadores(
     ganadores: list, proponentes: list, registro: _Registro, id_contrato: str, codigo: str
 ) -> list[dict[str, Any]]:
-    ids_proponentes = {p.get("idProponente") for p in proponentes if isinstance(p, dict)}
+    ids_proponentes = {str(p.get("idProponente")) for p in proponentes if isinstance(p, dict)}
     filas: list[dict[str, Any]] = []
     por_clave: dict[tuple, dict[str, Any]] = {}
 
@@ -415,10 +355,10 @@ def _transformar_ganadores(
 
         # Solo se usan campos seguros; jwt_contratista_id y pivot se ignoran.
         clave = (
-            entrada.get("idProponente"),
+            str(entrada.get("idProponente")),
             entrada.get("nombreEntidad"),
-            entrada.get("es_consorcio"),
-            entrada.get("id_contratista_verificado"),
+            str(entrada.get("es_consorcio")),
+            str(entrada.get("id_contratista_verificado")),
         )
         if clave in por_clave:
             por_clave[clave]["Repeticiones en origen"] += 1
@@ -430,10 +370,8 @@ def _transformar_ganadores(
             "CodigoProceso": codigo,
             "Orden": len(filas) + 1,
             "Empresa": nombre,
-            "NIT": None,
             "Es consorcio (origen)": si_no(entrada.get("es_consorcio")),
-            "Integrantes del consorcio": None,
-            "Está en proponentes": "Sí" if entrada.get("idProponente") in ids_proponentes else "No",
+            "Está en proponentes": "Sí" if str(entrada.get("idProponente")) in ids_proponentes else "No",
             "ID proponente (licitaciones.info)": entrada.get("idProponente"),
             "ID contratista verificado (licitaciones.info)": entrada.get("id_contratista_verificado"),
             "Repeticiones en origen": 1,
@@ -443,7 +381,7 @@ def _transformar_ganadores(
 
         if not nombre:
             registro.agregar(INC_SIN_DATO, "Ganador sin nombre.", id_contrato=id_contrato, codigo=codigo, hoja="Ganadores", campo="nombreEntidad")
-        if entrada.get("es_consorcio") is None:
+        if entrada.get("es_consorcio") in (None, "", "None"):
             registro.agregar(
                 INC_SIN_DATO,
                 f"Ganador '{nombre}' sin dato de es_consorcio.",
@@ -540,65 +478,46 @@ def _transformar_proceso(
     objeto = limpiar_texto(fila.get("Objeto"))
     if len(objeto) == LONGITUD_MAXIMA_OBJETO:
         incidencia(INC_CALIDAD, f"Objeto con exactamente {LONGITUD_MAXIMA_OBJETO} caracteres; posiblemente recortado por la API.", "Objeto")
-    if re.search(r"localidad", objeto, re.IGNORECASE):
-        incidencia(INC_REVISION, "El Objeto menciona una localidad; 'Localidad' no se infiere del texto.", "Objeto")
     if PATRON_DIRECCION.search(objeto):
-        incidencia(INC_REVISION, "El Objeto parece mencionar una dirección; 'Direccion' no se extrae del texto.", "Objeto")
+        incidencia(INC_REVISION, "El Objeto parece mencionar una dirección; no se extrae del texto.", "Objeto")
 
     entidad = limpiar_texto(fila.get("EntidadContratante"))
     if not entidad:
         incidencia(INC_SIN_DATO, "EntidadContratante vacía en origen.", "EntidadContratante")
 
-    datos = {columna.nombre: None for columna in COLUMNAS_DATOS}
-    datos.update(
-        {
-            "Entidad": entidad,
-            "Empresa": " | ".join(g["Empresa"] for g in ganadores if g["Empresa"]),
-            "Valor Millones": valor_millones,
-            "idContrato": id_contrato,
-            "CodigoProceso": codigo,
-            "Fuente": limpiar_texto(fila.get("nombre_fuente")),
-            "Enlace": limpiar_texto(fila.get("link")),
-            "Nombre (origen)": limpiar_texto(fila.get("Nombre")),
-            "Objeto (origen)": objeto,
-            "Valor (origen, pesos)": valor_origen if valor_origen is not None else texto_valor,
-            "Fecha publicación (origen)": fechas["FechaPublicacion"],
-            "Fecha vencimiento (origen)": fechas["FechaVencimiento"],
-            "Ubicación (origen)": limpiar_texto(fila.get("TextoDepartamento")),
-            "Num. ganadores": len(ganadores),
-            "Num. proponentes": len(anidados["proponentes"]),
-            "Adjudicación programada (cronograma)": _resumen_adjudicacion(
-                anidados["cronogramas"], registro, id_contrato, codigo
-            ),
-            "Estado (origen)": limpiar_texto(fila.get("estado_agrupado")),
-            "Archivo origen": archivo.ruta.name,
-            "Fecha extracción": archivo.fecha_extraccion,
-        }
-    )
+    cronogramas = anidados["cronogramas"]
+    adjudicacion = _fechas_de_hitos(cronogramas, PATRON_HITO_ADJUDICACION, registro, id_contrato, codigo)
+    inicios = _fechas_de_hitos(cronogramas, PATRON_HITO_INICIO, registro, id_contrato, codigo)
+    fines = _fechas_de_hitos(cronogramas, PATRON_HITO_FIN, registro, id_contrato, codigo)
+
+    datos = {
+        "idContrato": id_contrato,
+        "CodigoProceso": codigo,
+        "Entidad contratante": entidad,
+        "Objeto": objeto,
+        "Empresa (ganadores)": " | ".join(g["Empresa"] for g in ganadores if g["Empresa"]),
+        "Valor Millones": valor_millones,
+        "Valor (origen, pesos)": valor_origen if valor_origen is not None else texto_valor,
+        "Ubicación (origen)": limpiar_texto(fila.get("TextoDepartamento")),
+        "Fuente": limpiar_texto(fila.get("nombre_fuente")),
+        "Enlace": limpiar_texto(fila.get("link")),
+        "Nombre (origen)": limpiar_texto(fila.get("Nombre")),
+        "Fecha publicación (origen)": fechas["FechaPublicacion"],
+        "Fecha vencimiento (origen)": fechas["FechaVencimiento"],
+        "Num. ganadores": len(ganadores),
+        "Num. proponentes": len(anidados["proponentes"]),
+        "Adjudicación programada (cronograma)": _resumen_fechas(adjudicacion),
+        "Inicio ejecución (cronograma)": _resumen_fechas(inicios),
+        "Fin ejecución (cronograma)": _resumen_fechas(fines),
+        "Estado (origen)": limpiar_texto(fila.get("estado_agrupado")),
+        "Archivo origen": archivo.ruta.name,
+        "Fecha extracción": archivo.fecha_extraccion,
+        # Campos internos (no se escriben como columnas): los usa obras_asesores.py.
+        "_ganadores": [g["Empresa"] for g in ganadores if g["Empresa"]],
+        "_inicios": inicios,
+        "_fines": fines,
+    }
     return datos, ganadores
-
-
-def _incidencias_de_columnas(registro: _Registro) -> None:
-    """Una incidencia por columna sin fuente o con mapeo provisional (afecta a todas las filas)."""
-    for hoja, columnas in (("Datos", COLUMNAS_GRECO), ("Ganadores", COLUMNAS_GANADORES)):
-        for columna in columnas:
-            if columna.estado == SIN_FUENTE:
-                registro.agregar(INC_SIN_FUENTE, columna.regla, alcance="Columna", hoja=hoja, campo=columna.nombre)
-            elif columna.estado == PROVISIONAL:
-                registro.agregar(
-                    INC_PROVISIONAL,
-                    f"Mapeo provisional desde '{columna.origen}': {columna.regla} Confirmar con Obras V6.",
-                    alcance="Columna",
-                    hoja=hoja,
-                    campo=columna.nombre,
-                )
-    registro.agregar(
-        INC_PROVISIONAL,
-        "Los nombres y el orden de las columnas GRECO se tomaron de una captura de Obras V6; "
-        "algunos encabezados estaban cortados. Confirmar con el .xlsx original.",
-        alcance="Columna",
-        campo="(encabezados GRECO)",
-    )
 
 
 def procesar(directorio_entrada: Path) -> Resultado:
@@ -642,8 +561,6 @@ def procesar(directorio_entrada: Path) -> Resultado:
                 campo="CodigoProceso",
             )
 
-    _incidencias_de_columnas(registro)
-
     valores = [d["Valor (origen, pesos)"] for d in datos if isinstance(d["Valor (origen, pesos)"], float)]
     no_cero = [v for v in valores if v > 0]
     metricas = {
@@ -662,6 +579,5 @@ def procesar(directorio_entrada: Path) -> Resultado:
         "procesos_sin_ganador": sum(1 for d in datos if not d["Num. ganadores"]),
         "valor_minimo_no_cero": min(no_cero) if no_cero else None,
         "valor_mediana": statistics.median(no_cero) if no_cero else None,
-        "incidencias_por_tipo": dict(Counter(i["Tipo"] for i in registro.incidencias)),
     }
     return Resultado(archivos, datos, ganadores, registro.incidencias, metricas)

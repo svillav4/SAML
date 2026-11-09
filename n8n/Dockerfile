@@ -36,7 +36,7 @@ RUN ln -s python3.14 /usr/local/bin/python3 \
  && python3 -m venv /opt/saml-venv \
  && /opt/saml-venv/bin/pip install --no-cache-dir --disable-pip-version-check \
       -r /opt/saml/requirements-ingesta.txt -r /opt/saml/requirements-transformacion.txt \
- && /opt/saml-venv/bin/python -c "import ssl, requests, dotenv, openpyxl"
+ && /opt/saml-venv/bin/python -c "import ssl, requests, dotenv, openpyxl, openai"
 
 # Los codigos del proyecto se montan en solo lectura: no escribir __pycache__.
 ENV PYTHONDONTWRITEBYTECODE=1 \
