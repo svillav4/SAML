@@ -1,10 +1,10 @@
 {
   "id": "samlLicitaciones",
-  "name": "SAML - Proceso completo: Licitaciones.info a Excel intermedio",
+  "name": "SAML - Proceso completo: Licitaciones.info a archivos por asesor",
   "nodes": [
     {
       "parameters": {
-        "content": "## Proceso completo (consulta Licitaciones.info)\nPulsa **Execute workflow** (o el boton de play del disparador).\n\n1. Ingesta: consulta Licitaciones.info con `Ingesta/.env` y guarda un CSV nuevo en `Ingesta/output/`.\n2. Solo si la ingesta termina bien: limpieza, filtro **Adjudicado** y Excel nuevo en `datos/intermedio/`.\n3. Verificacion del Excel. El nodo **Resultado** muestra el nombre y la ruta del archivo.\n\nSi la ingesta falla (credenciales, red, API), la ejecucion falla y NO se genera Excel.",
+        "content": "## Proceso completo (consulta Licitaciones.info)\nPulsa **Execute workflow** (o el boton de play del disparador).\n\n1. Ingesta: consulta Licitaciones.info con `Ingesta/.env` y guarda un CSV nuevo en `Ingesta/output/`.\n2. Solo si la ingesta termina bien: limpieza, filtro **Adjudicado** y reparto entre los maestros de `datos/maestros/`.\n3. Crea `datos/salida/SAML_<fecha>/` con un Excel de obras nuevas por asesor y el Excel de revision, y los verifica.\n\nSi la ingesta falla (credenciales, red, API), la ejecucion falla y NO se generan archivos.",
         "height": 200,
         "width": 820
       },
@@ -33,22 +33,22 @@
         "command": "cd /proyecto && /opt/saml-venv/bin/python Transformacion/ejecutar_proceso.py --actualizar 2>&1; echo \"CODIGO_SALIDA=$?\""
       },
       "id": "35156026-89ce-41da-8b5d-c668736f1596",
-      "name": "Ingesta (Licitaciones.info) y luego Excel",
+      "name": "Ingesta (Licitaciones.info) y luego archivos por asesor",
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
         280,
         0
       ],
-      "notes": "Primero ejecuta Ingesta/extract.py; solo si termina bien limpia los datos y genera el Excel.",
+      "notes": "Primero ejecuta Ingesta/extract.py; solo si termina bien limpia, reparte y genera los Excel.",
       "notesInFlow": true
     },
     {
       "parameters": {
-        "jsCode": "// Evalua la salida de Transformacion/ejecutar_proceso.py y resume el resultado.\n// Falla la ejecucion si el codigo de salida no es 0, si falta el Excel o si la verificacion no es OK.\nconst EXIGIR_INGESTA = true;\nconst resultados = [];\nfor (const item of $input.all()) {\n  const stdout = String(item.json.stdout || '');\n  const lineas = stdout.split('\\n');\n  const coincidencia = stdout.match(/CODIGO_SALIDA=(\\d+)\\s*$/);\n  const codigo = coincidencia ? Number(coincidencia[1]) : null;\n  const buscar = (prefijo) => lineas.find((l) => l.startsWith(prefijo)) || '';\n  const modo = buscar('=== MODO');\n  const ingesta = buscar('Ingesta correcta:').replace('Ingesta correcta:', '').trim();\n  const verificacion = buscar('Verificacion:');\n  const excel = buscar('Excel generado:').replace('Excel generado:', '').trim();\n  const csv = lineas.filter((l) => l.trim().startsWith('- Ingesta/output/')).map((l) => l.trim().slice(2));\n  const posIngesta = ingesta ? stdout.indexOf('Ingesta correcta:') : -1;\n  const posExcel = excel ? stdout.indexOf('Excel generado:') : -1;\n\n  const problemas = [];\n  if (codigo !== 0) problemas.push(`el proceso termino con codigo ${codigo}`);\n  if (EXIGIR_INGESTA && !ingesta) problemas.push('no se confirmo una ingesta correcta');\n  if (EXIGIR_INGESTA && ingesta && excel && posIngesta > posExcel) problemas.push('el Excel aparece antes que la ingesta');\n  if (!excel) problemas.push('no se genero Excel');\n  if (!verificacion.startsWith('Verificacion: OK')) problemas.push('la verificacion no es OK');\n  if (problemas.length) {\n    const detalle = lineas.filter((l) => /ERROR|FALLO|faltan valores|Verificacion|marcado para revision/.test(l)).join('\\n');\n    throw new Error(`No hay un Excel valido de esta ejecucion: ${problemas.join('; ')}.\\n` + (detalle || stdout.slice(-2000)));\n  }\n  const nombre = excel.split('/').pop();\n  resultados.push({\n    json: {\n      modo,\n      ingesta_csv_nuevo: ingesta || '(no aplica: demostracion con CSV existentes)',\n      excel_nombre: nombre,\n      excel_ruta_en_el_repositorio: excel,\n      verificacion,\n      csv_consolidados: csv,\n      codigo_salida: codigo,\n    },\n  });\n}\nreturn resultados;\n"
+        "jsCode": "// Evalua la salida de Transformacion/ejecutar_proceso.py y resume el resultado.\n// Falla la ejecucion si el codigo de salida no es 0, si falta la revision o si la verificacion no es OK.\nconst EXIGIR_INGESTA = true;\nconst resultados = [];\nfor (const item of $input.all()) {\n  const stdout = String(item.json.stdout || '');\n  const lineas = stdout.split(/\\r?\\n/);\n  const coincidencia = stdout.match(/CODIGO_SALIDA=(\\d+)\\s*$/);\n  const codigo = coincidencia ? Number(coincidencia[1]) : null;\n  const buscar = (prefijo) => lineas.find((l) => l.startsWith(prefijo)) || '';\n  const valor = (prefijo) => buscar(prefijo).replace(prefijo, '').trim();\n  const modo = buscar('=== MODO');\n  const ingesta = valor('Ingesta correcta:');\n  const verificacion = buscar('Verificacion:');\n  const reparto = valor('Reparto:');\n  const revision = valor('Revision generada:');\n  const carpeta = valor('Carpeta de salida:');\n  const archivos = lineas\n    .filter((l) => l.startsWith('Archivo para '))\n    .map((l) => {\n      const m = l.match(/^Archivo para (.+?): (.+?) \\((\\d+) filas\\)$/);\n      return m ? { asesor: m[1], archivo: m[2].split('/').pop(), ruta: m[2], filas: Number(m[3]) } : { detalle: l };\n    });\n  const csv = lineas.filter((l) => l.trim().startsWith('- Ingesta/output/')).map((l) => l.trim().slice(2));\n  const posIngesta = ingesta ? stdout.indexOf('Ingesta correcta:') : -1;\n  const posRevision = revision ? stdout.indexOf('Revision generada:') : -1;\n\n  const problemas = [];\n  if (codigo !== 0) problemas.push(`el proceso termino con codigo ${codigo}`);\n  if (EXIGIR_INGESTA && !ingesta) problemas.push('no se confirmo una ingesta correcta');\n  if (EXIGIR_INGESTA && ingesta && revision && posIngesta > posRevision) problemas.push('los archivos aparecen antes que la ingesta');\n  if (!revision) problemas.push('no se genero el archivo de revision');\n  if (!verificacion.startsWith('Verificacion: OK')) problemas.push('la verificacion no es OK');\n  if (problemas.length) {\n    const detalle = lineas.filter((l) => /ERROR|FALLO|faltan valores|Verificacion|marcada para revision|maestro/.test(l)).join('\\n');\n    throw new Error(`No hay archivos validos de esta ejecucion: ${problemas.join('; ')}.\\n` + (detalle || stdout.slice(-2000)));\n  }\n  resultados.push({\n    json: {\n      modo,\n      ingesta_csv_nuevo: ingesta || '(no aplica: demostracion con CSV existentes)',\n      reparto,\n      archivos_por_asesor: archivos,\n      revision,\n      carpeta_salida: carpeta,\n      verificacion,\n      csv_consolidados: csv,\n      codigo_salida: codigo,\n    },\n  });\n}\nreturn resultados;\n"
       },
       "id": "d8e2acb4-29c1-4314-8c9b-b89fb2f11822",
-      "name": "Resultado: Excel generado",
+      "name": "Resultado: archivos por asesor",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
@@ -62,18 +62,18 @@
       "main": [
         [
           {
-            "node": "Ingesta (Licitaciones.info) y luego Excel",
+            "node": "Ingesta (Licitaciones.info) y luego archivos por asesor",
             "type": "main",
             "index": 0
           }
         ]
       ]
     },
-    "Ingesta (Licitaciones.info) y luego Excel": {
+    "Ingesta (Licitaciones.info) y luego archivos por asesor": {
       "main": [
         [
           {
-            "node": "Resultado: Excel generado",
+            "node": "Resultado: archivos por asesor",
             "type": "main",
             "index": 0
           }

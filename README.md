@@ -23,7 +23,8 @@ SAML/
 │   ├── Entregable 1/
 │   └── Entregable 2/
 ├── Ingesta/          # extraccion desde la API de licitaciones.info -> Ingesta/output/*.csv
-├── Transformacion/   # limpieza y Excel intermedio -> datos/intermedio/*.xlsx
+├── Transformacion/   # limpieza y reparto por asesor -> datos/salida/SAML_<fecha>/*.xlsx
+├── datos/            # NO se versiona: maestros/ (4 Excel de GRECO) y salida/
 ├── n8n/              # n8n local en Docker + workflow (disparadores manuales del proceso local)
 └── README.md
 ```
@@ -31,11 +32,13 @@ SAML/
 ### Ingesta y Transformacion:
 
 - Ingesta: configuración en `Ingesta/.env` (plantilla en `Ingesta/.env.example`); se ejecuta con `python extract.py` desde `Ingesta/`.
-- Transformacion: genera el Excel intermedio de licitaciones adjudicadas (versión de demostración). Instrucciones en [Transformacion/README.md](Transformacion/README.md).
+- Transformacion: limpia las licitaciones adjudicadas, las reparte entre los 4 Excel maestros de GRECO (uno por asesor, en `datos/maestros/`) y genera un Excel de obras nuevas por asesor, con las 71 columnas de su maestro, más un Excel de revisión. Instrucciones en [Transformacion/README.md](Transformacion/README.md).
   - Demo con los CSV ya guardados (no consulta el portal): `.venv/bin/python Transformacion/ejecutar_proceso.py`
-  - Actualizar desde Licitaciones.info y generar el Excel: `.venv/bin/python Transformacion/ejecutar_proceso.py --actualizar`
-- n8n: instancia local en Docker (http://localhost:5678) con el workflow "Proceso completo" (ingesta desde Licitaciones.info y luego Excel) y otro de demo con CSV locales. Instrucciones en [n8n/README.md](n8n/README.md).
-- `datos/` y `.env` no se versionan: contienen credenciales, archivos del cliente y resultados generados.
+  - Actualizar desde Licitaciones.info y generar los archivos: `.venv/bin/python Transformacion/ejecutar_proceso.py --actualizar`
+  - En Windows el intérprete es `.venv/Scripts/python`.
+- Copias actualizadas de los maestros (con Excel, en Windows): se generan solas al ejecutar desde la terminal; después de una ejecución de n8n, doble clic en `Actualizar_maestros.bat`.
+- n8n: instancia local en Docker (http://localhost:5678) con el workflow "Proceso completo" (ingesta desde Licitaciones.info y luego archivos por asesor) y otro de demo con CSV locales. Instrucciones en [n8n/README.md](n8n/README.md).
+- `datos/` y `.env` no se versionan: contienen credenciales, los maestros del cliente (NIT, ventas, clientes) y resultados generados. El repositorio es público: nunca subas esos archivos.
 
 ### docs:
 
