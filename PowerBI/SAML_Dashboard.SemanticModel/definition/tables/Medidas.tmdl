@@ -1,0 +1,342 @@
+table Medidas
+	lineageTag: 8d147b04-f99a-5c4e-9da3-b1fdb72ad6b3
+
+	measure 'Procesos adjudicados' = DISTINCTCOUNT(FactProcesos[idContrato])
+		formatString: #,0
+		displayFolder: 1. Procesos
+		lineageTag: f79fa88a-f151-515f-a579-24b7a1a8bc81
+
+	measure 'Valor adjudicado (MM)' = SUM(FactProcesos[Valor (MM)])
+		formatString: #,0
+		displayFolder: 1. Procesos
+		lineageTag: 6ebf7381-16ad-5233-b45d-856dbdbc8282
+
+	measure 'Valor adjudicado (miles de millones)' = DIVIDE([Valor adjudicado (MM)], 1000)
+		formatString: #,0.0
+		displayFolder: 1. Procesos
+		lineageTag: cf29c6ae-bd3b-517a-ad33-7b3e2e238967
+
+	measure 'Valor promedio (MM)' = AVERAGE(FactProcesos[Valor (MM)])
+		formatString: #,0
+		displayFolder: 1. Procesos
+		lineageTag: 89fc1b85-0a23-5765-ac8a-413159febedc
+
+	measure 'Valor mediano (MM)' = MEDIAN(FactProcesos[Valor (MM)])
+		formatString: #,0
+		displayFolder: 1. Procesos
+		lineageTag: c3a6eabf-4a6b-59c5-bf98-d3d20d1a0fd4
+
+	measure 'Mayor proceso (MM)' = MAX(FactProcesos[Valor (MM)])
+		formatString: #,0
+		displayFolder: 1. Procesos
+		lineageTag: 8f034408-a5fb-55a1-a518-e4a61c09d452
+
+	measure 'Entidades contratantes' = DISTINCTCOUNT(FactProcesos[Entidad])
+		formatString: #,0
+		displayFolder: 1. Procesos
+		lineageTag: 964beb38-0c43-529a-b19e-5be65a153ac7
+
+	measure '% del valor' = DIVIDE([Valor adjudicado (MM)], CALCULATE([Valor adjudicado (MM)], ALLSELECTED()))
+		formatString: 0.0%
+		displayFolder: 1. Procesos
+		lineageTag: 763734b1-11c1-59e0-acf5-4cb750fd8aef
+
+	measure '% top 10 entidades' =
+			VAR Top10 = TOPN(10, VALUES(FactProcesos[Entidad]), [Valor adjudicado (MM)], DESC)
+			RETURN DIVIDE(SUMX(Top10, [Valor adjudicado (MM)]), [Valor adjudicado (MM)])
+		formatString: 0%
+		displayFolder: 1. Procesos
+		lineageTag: 052b76e6-afc3-5e87-818a-b4776ea545d3
+
+	measure 'Valor (top 8 entidades)' =
+			VAR Posicion = RANKX(ALLSELECTED(FactProcesos[Entidad]), [Valor adjudicado (MM)], , DESC, Dense)
+			RETURN IF(Posicion <= 8, [Valor adjudicado (MM)])
+		formatString: #,0
+		displayFolder: 1. Procesos
+		lineageTag: caadbd12-588c-5458-a2e2-ca891830541a
+
+	measure 'Días promedio publicación a cierre' = AVERAGE(FactProcesos[Días publicación a cierre])
+		formatString: #,0
+		displayFolder: 1. Procesos
+		lineageTag: 8fccd655-027d-52a7-bc74-b6f72e512bde
+
+	measure 'Proponentes promedio' = AVERAGE(FactProcesos[Num. proponentes])
+		formatString: #,0.0
+		displayFolder: 2. Competencia
+		lineageTag: 2a69d874-020e-5722-975d-f2852d953e6a
+
+	measure 'Proponentes mediana' = MEDIAN(FactProcesos[Num. proponentes])
+		formatString: #,0
+		displayFolder: 2. Competencia
+		lineageTag: 3c75e5b8-2076-5363-832d-7aeee12d4a72
+
+	measure 'Procesos con único proponente' = CALCULATE([Procesos adjudicados], FactProcesos[Num. proponentes] = 1)
+		formatString: #,0
+		displayFolder: 2. Competencia
+		lineageTag: d39e4a5d-b117-50ff-818d-7e82a33e5b21
+
+	measure '% único proponente' = DIVIDE([Procesos con único proponente], [Procesos adjudicados])
+		formatString: 0%
+		displayFolder: 2. Competencia
+		lineageTag: acffa845-7088-5820-b0d7-58c84f3977af
+
+	measure 'Ganadores registrados' = COUNTROWS(FactGanadores)
+		formatString: #,0
+		displayFolder: 3. Ganadores
+		lineageTag: 33c2a69e-2c3b-5920-88bf-56f15b1f1846
+
+	measure 'Empresas ganadoras' = DISTINCTCOUNT(FactGanadores[Empresa])
+		formatString: #,0
+		displayFolder: 3. Ganadores
+		lineageTag: efcd2ced-4c53-5f79-97a8-ac8cc536aaf7
+
+	measure 'Ganadores consorcio o UT' = CALCULATE(COUNTROWS(FactGanadores), FactGanadores[Es consorcio] = "Sí")
+		formatString: #,0
+		displayFolder: 3. Ganadores
+		lineageTag: 8489cdfb-1637-58ec-ab25-da51b6df9db3
+
+	measure '% consorcios o UT' = DIVIDE([Ganadores consorcio o UT], [Ganadores registrados])
+		formatString: 0%
+		displayFolder: 3. Ganadores
+		lineageTag: f18166be-fa2b-55a1-8a09-df2a8e1688b5
+
+	measure 'Procesos con varios ganadores' = CALCULATE([Procesos adjudicados], FactProcesos[Num. ganadores] > 1)
+		formatString: #,0
+		displayFolder: 3. Ganadores
+		lineageTag: 39b89f72-9de9-547d-b60f-04d65bdc7d11
+
+	measure 'Procesos sin ganador' = CALCULATE([Procesos adjudicados], FactProcesos[Num. ganadores] = 0)
+		formatString: #,0
+		displayFolder: 3. Ganadores
+		lineageTag: d7c3f8bb-1a77-59d6-9d0b-d64fd9ae69a5
+
+	measure 'Ganadores fuera de proponentes' = CALCULATE(COUNTROWS(FactGanadores), FactGanadores[Está en proponentes] = "No")
+		formatString: #,0
+		displayFolder: 3. Ganadores
+		lineageTag: 9568ca23-a8dd-5889-8bd1-f2d85ec67fcd
+
+	measure 'Procesos ganados' = DISTINCTCOUNT(FactGanadores[idContrato])
+		formatString: #,0
+		displayFolder: 3. Ganadores
+		lineageTag: 11fc5916-684b-59d3-ab68-cf362cdd67cf
+
+	measure 'Empresas con más de un proceso' =
+			COUNTROWS(
+			    FILTER(VALUES(FactGanadores[Empresa]), CALCULATE(DISTINCTCOUNT(FactGanadores[idContrato])) > 1)
+			)
+		formatString: #,0
+		displayFolder: 3. Ganadores
+		lineageTag: 46642ebb-f44f-5937-8028-c6ced363c74a
+
+	/// Valor total de los procesos en los que participa la empresa. No se reparte entre co-ganadores.
+	measure 'Valor procesos ganados (MM)' = [Valor adjudicado (MM)]
+		formatString: #,0
+		displayFolder: 3. Ganadores
+		lineageTag: 6080cd73-54f6-5d29-9128-7e49eff05f31
+
+	measure 'Barra valor empresa' =
+			VAR V = [Valor procesos ganados (MM)]
+			VAR Maximo = MAXX(ALLSELECTED(FactGanadores[Empresa]), [Valor procesos ganados (MM)])
+			VAR W = ROUND(DIVIDE(V, Maximo) * 98, 0) + 2
+			RETURN IF(ISBLANK(V) || NOT ISINSCOPE(FactGanadores[Empresa]), BLANK(), "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='12' viewBox='0 0 100 12'><rect x='0' y='3' width='100' height='6' rx='3' fill='%23ECE8E1'/><rect x='0' y='3' width='" & W & "' height='6' rx='3' fill='%23E8A33D'/></svg>")
+		displayFolder: 3. Ganadores
+		dataCategory: ImageUrl
+		lineageTag: 6c7bd360-4507-5359-97da-86837c409b45
+
+	/// Barra en escala raíz cuadrada para que el proceso atípico no aplaste al resto.
+	measure 'Barra valor entidad' =
+			VAR V = [Valor adjudicado (MM)]
+			VAR Maximo = MAXX(ALLSELECTED(FactProcesos[CodigoProceso]), [Valor adjudicado (MM)])
+			VAR W = ROUND(SQRT(DIVIDE(V, Maximo)) * 98, 0) + 2
+			RETURN IF(ISBLANK(V) || NOT ISINSCOPE(FactProcesos[CodigoProceso]), BLANK(), "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='12' viewBox='0 0 100 12'><rect x='0' y='3' width='100' height='6' rx='3' fill='%23ECE8E1'/><rect x='0' y='3' width='" & W & "' height='6' rx='3' fill='%23E8A33D'/></svg>")
+		displayFolder: 3. Ganadores
+		dataCategory: ImageUrl
+		lineageTag: 0e8365e2-cfba-5c7c-9e01-c8f21be70689
+
+	measure 'Total incidencias' = COUNTROWS(FactIncidencias)
+		formatString: #,0
+		displayFolder: 4. Calidad
+		lineageTag: a182aed0-2755-57fc-8c12-6439cb528bc5
+
+	measure 'Incidencias de registro' = CALCULATE(COUNTROWS(FactIncidencias), FactIncidencias[Alcance] = "Registro")
+		formatString: #,0
+		displayFolder: 4. Calidad
+		lineageTag: 5580500c-5852-5089-98fd-02a20af348e5
+
+	measure 'Procesos con incidencias' = CALCULATE(DISTINCTCOUNT(FactIncidencias[idContrato]), NOT ISBLANK(FactIncidencias[idContrato]))
+		formatString: #,0
+		displayFolder: 4. Calidad
+		lineageTag: 185498db-ed86-5bd4-8dd8-67a7c80bfd3e
+
+	measure '% procesos sin incidencias' = 1 - DIVIDE([Procesos con incidencias], [Procesos adjudicados])
+		formatString: 0%
+		displayFolder: 4. Calidad
+		lineageTag: bfdbfc4b-b3ce-52ce-a704-f34506de1946
+
+	measure 'Incidencias por proceso' = DIVIDE([Incidencias de registro], [Procesos adjudicados])
+		formatString: 0.00
+		displayFolder: 4. Calidad
+		lineageTag: 4384a92d-9ac7-5874-9a54-251620a1b392
+
+	measure 'Incidencias (top 8 campos)' =
+			VAR Posicion = RANKX(ALLSELECTED(FactIncidencias[Campo]), [Total incidencias], , DESC, Dense)
+			RETURN IF(Posicion <= 8, [Total incidencias])
+		formatString: #,0
+		displayFolder: 4. Calidad
+		lineageTag: 80abfbd8-971f-5b7d-bc2d-c737a6d1ca6b
+
+	measure 'Columnas documentadas' = COUNTROWS(DimMapeoColumnas)
+		formatString: #,0
+		displayFolder: 4. Calidad
+		lineageTag: 9e168747-2963-5ecd-8d13-8759a0bcdb5b
+
+	measure 'Columnas con dato de la API' = CALCULATE(COUNTROWS(DimMapeoColumnas), DimMapeoColumnas[Con dato desde la API] = "Sí")
+		formatString: #,0
+		displayFolder: 4. Calidad
+		lineageTag: e8d1fbd8-53ad-5142-a91e-ba9e0776441a
+
+	measure '% cobertura de columnas' = DIVIDE([Columnas con dato de la API], [Columnas documentadas])
+		formatString: 0%
+		displayFolder: 4. Calidad
+		lineageTag: 4817d493-aa78-503f-8592-4dec56d7cf34
+
+	measure 'Texto corte' = "Corte " & FORMAT(MAX(FactProcesos[Fecha extracción]), "dd/mm/yyyy · hh:nn")
+		displayFolder: 5. Textos
+		lineageTag: d4fc9dd8-82a3-5be7-a02b-e1c978bc90be
+
+	measure 'Texto fuente' = FORMAT(CALCULATE([Procesos adjudicados], ALL(FactProcesos)), "#,0") & " procesos · SECOP I y II"
+		displayFolder: 5. Textos
+		lineageTag: 124a240e-d827-56e9-9ca5-18474a3d1277
+
+	measure 'Sub procesos' = FORMAT([Entidades contratantes], "#,0") & " entidades contratantes"
+		displayFolder: 5. Textos
+		lineageTag: 41633d30-80a7-5c02-811d-7b4f7890e337
+
+	measure 'Sub valor' = "Top 10 entidades: " & FORMAT([% top 10 entidades], "0%") & " del valor"
+		displayFolder: 5. Textos
+		lineageTag: b0b4a91b-8d2f-5852-ba38-cdc05a0d09ed
+
+	measure 'Sub mediana' = "Promedio: " & FORMAT([Valor promedio (MM)], "#,0") & " MM"
+		displayFolder: 5. Textos
+		lineageTag: 9e2a37a4-44a8-5ff0-88f3-850799da6ca6
+
+	measure 'Sub empresas' = FORMAT([% consorcios o UT], "0%") & " son consorcios o UT"
+		displayFolder: 5. Textos
+		lineageTag: 2319e626-2ef3-57e6-8d89-4e1aae2157ff
+
+	measure 'Sub proponentes' = FORMAT([Procesos con único proponente], "0") & " procesos con un solo oferente"
+		displayFolder: 5. Textos
+		lineageTag: 62bbd047-bf83-5d36-b2d6-db2e56000bf3
+
+	measure 'Sub ganados' = FORMAT([Ganadores registrados], "#,0") & " adjudicaciones registradas"
+		displayFolder: 5. Textos
+		lineageTag: ff5c20b2-e32b-5a8e-aa42-6ca235c343f8
+
+	measure 'Sub consorcios' = FORMAT([Ganadores consorcio o UT], "#,0") & " de " & FORMAT([Ganadores registrados], "#,0") & " ganadores"
+		displayFolder: 5. Textos
+		lineageTag: 3b334114-8fb6-5830-b229-44e408778487
+
+	measure 'Sub varios ganadores' = FORMAT(DIVIDE([Procesos con varios ganadores], [Procesos adjudicados]), "0%") & " de los procesos"
+		displayFolder: 5. Textos
+		lineageTag: 029a5aeb-c23a-5572-b917-45e228a896ba
+
+	measure 'Sub recurrentes' = "Ganaron dos o más procesos"
+		displayFolder: 5. Textos
+		lineageTag: 671e3c51-5e4f-571e-ade9-7866997fc4eb
+
+	measure 'Sub fuera proponentes' = "No figuran en la lista de oferentes"
+		displayFolder: 5. Textos
+		lineageTag: e6e7b05f-694a-5a49-8581-9b7d50b9e89a
+
+	measure 'Sub incidencias' = FORMAT([Incidencias de registro], "#,0") & " de registro · " & FORMAT([Total incidencias] - [Incidencias de registro], "#,0") & " de columna"
+		displayFolder: 5. Textos
+		lineageTag: a5ff35ae-ad72-5b02-9033-5afab19f7a19
+
+	measure 'Sub procesos incidencias' = FORMAT(DIVIDE([Procesos con incidencias], [Procesos adjudicados]), "0%") & " de los procesos"
+		displayFolder: 5. Textos
+		lineageTag: 8abe67af-ee39-51b4-8d99-046c90452112
+
+	measure 'Sub sin incidencias' = "Procesos listos sin revisión"
+		displayFolder: 5. Textos
+		lineageTag: 28d340b2-43e4-54d1-aa9a-2c8850d9d6a1
+
+	measure 'Sub por proceso' = "Incidencias de registro / proceso"
+		displayFolder: 5. Textos
+		lineageTag: 31f4522e-19e5-54ad-bad3-f25a27ff0bf2
+
+	measure 'Sub cobertura' = FORMAT([Columnas con dato de la API], "0") & " de " & FORMAT([Columnas documentadas], "0") & " columnas con dato"
+		displayFolder: 5. Textos
+		lineageTag: cf1570c0-5b30-5100-8cb2-2460ed0a92b1
+
+	measure 'Ficha · Código' = SELECTEDVALUE(FactProcesos[CodigoProceso], "Selecciona un proceso")
+		displayFolder: 6. Ficha
+		lineageTag: 27e1e461-1bb7-5aff-a860-46ca91889621
+
+	measure 'Ficha · Entidad' = SELECTEDVALUE(FactProcesos[Entidad], "—")
+		displayFolder: 6. Ficha
+		lineageTag: 6f2ecb5a-b01b-555c-9597-8476b2bc7489
+
+	measure 'Ficha · Sector' = SELECTEDVALUE(FactProcesos[Sector], "—")
+		displayFolder: 6. Ficha
+		lineageTag: c2a09514-6a77-53bc-987b-a3bdca9e1c51
+
+	measure 'Ficha · Modalidad' = SELECTEDVALUE(FactProcesos[Nombre del proceso], "—")
+		displayFolder: 6. Ficha
+		lineageTag: 258c21a7-a56c-5b13-9f17-57b5df6ba48f
+
+	measure 'Ficha · Ubicación' = SELECTEDVALUE(FactProcesos[Ubicación], "—")
+		displayFolder: 6. Ficha
+		lineageTag: bdc6599f-f5c2-51e7-b3f7-6cfefa8901df
+
+	measure 'Ficha · Publicación' = IF(HASONEVALUE(FactProcesos[idContrato]), FORMAT(MAX(FactProcesos[Fecha publicación]), "dd/mm/yyyy hh:nn"), "—")
+		displayFolder: 6. Ficha
+		lineageTag: d43cd567-36e2-5bf8-9a77-3aaae246200d
+
+	measure 'Ficha · Cierre' = IF(HASONEVALUE(FactProcesos[idContrato]), FORMAT(MAX(FactProcesos[Fecha cierre]), "dd/mm/yyyy hh:nn"), "—")
+		displayFolder: 6. Ficha
+		lineageTag: 7766cd5b-8471-541c-b9e9-5602bec30ce2
+
+	measure 'Ficha · Adjudicación programada' = SELECTEDVALUE(FactProcesos[Adjudicación programada], "Sin cronograma")
+		displayFolder: 6. Ficha
+		lineageTag: 186a0f39-ac16-5046-b3b1-7aa4616d56fc
+
+	measure 'Ficha · Objeto' = SELECTEDVALUE(FactProcesos[Objeto], "Haz clic derecho sobre un proceso en Licitaciones → Obtener detalles → Ficha del proceso.")
+		displayFolder: 6. Ficha
+		lineageTag: 90b6cbea-7b63-57b1-96f5-c9220181ee7d
+
+	measure 'Ficha · Enlace' = SELECTEDVALUE(FactProcesos[Enlace])
+		displayFolder: 6. Ficha
+		dataCategory: WebUrl
+		lineageTag: f81263c3-f038-5a3c-b340-bc8c94ad74c0
+
+	measure 'Ficha · Días' = MAX(FactProcesos[Días publicación a cierre])
+		formatString: 0
+		displayFolder: 6. Ficha
+		lineageTag: d87e5e88-d05c-5267-b893-ac7a40ab2ae7
+
+	measure 'Ficha · Proponentes' = SUM(FactProcesos[Num. proponentes])
+		formatString: 0
+		displayFolder: 6. Ficha
+		lineageTag: d757a190-260d-5c9d-b09a-d7a88d7fe127
+
+	measure 'Ficha · Ganadores' = SUM(FactProcesos[Num. ganadores])
+		formatString: 0
+		displayFolder: 6. Ficha
+		lineageTag: 9860cc58-59b8-5cf1-92a8-463620672a0e
+
+	column Nota
+		dataType: string
+		isHidden
+		lineageTag: 61e42f50-02d0-5449-848b-2f1fc0a2832f
+		summarizeBy: none
+		sourceColumn: Nota
+
+	partition Medidas = m
+		mode: import
+		source =
+				let
+				    Origen = #table(type table [Nota = text], {})
+				in
+				    Origen
+
+	annotation PBI_ResultType = Table
