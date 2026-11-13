@@ -1,0 +1,82 @@
+table FactIncidencias
+	lineageTag: d35b88d2-ab35-51da-bbd7-44825f57564a
+
+	column Tipo
+		dataType: string
+		lineageTag: 6c3b94f4-36f0-5157-a0bc-6c9681d74255
+		summarizeBy: none
+		sourceColumn: Tipo
+
+		annotation SummarizationSetBy = Automatic
+
+	column Alcance
+		dataType: string
+		lineageTag: 51743ab6-87a6-53eb-9e18-018896b87ec2
+		summarizeBy: none
+		sourceColumn: Alcance
+
+		annotation SummarizationSetBy = Automatic
+
+	column idContrato
+		dataType: string
+		isHidden
+		lineageTag: feecf013-c97b-5c3b-93ca-99b70a6404be
+		summarizeBy: none
+		sourceColumn: idContrato
+
+		annotation SummarizationSetBy = Automatic
+
+	column CodigoProceso
+		dataType: string
+		lineageTag: 27723166-3634-5429-85fc-e49d205e458f
+		summarizeBy: none
+		sourceColumn: CodigoProceso
+
+		annotation SummarizationSetBy = Automatic
+
+	column Hoja
+		dataType: string
+		lineageTag: a45ec3c6-f171-5885-9ed5-fa13eb8a213f
+		summarizeBy: none
+		sourceColumn: Hoja
+
+		annotation SummarizationSetBy = Automatic
+
+	column Campo
+		dataType: string
+		lineageTag: abe5200c-fbe3-5adf-99de-d20cb15d857e
+		summarizeBy: none
+		sourceColumn: Campo
+
+		annotation SummarizationSetBy = Automatic
+
+	column Detalle
+		dataType: string
+		lineageTag: f97284d9-efcf-5000-8750-84fc1c227810
+		summarizeBy: none
+		sourceColumn: Detalle
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactIncidencias = m
+		mode: import
+		source =
+				let
+
+				    Origen = Excel.Workbook(File.Contents(RutaFuente), null, true),
+				    Texto = (x) => if x = null then "" else Text.From(x),
+				    Clasificar = (texto as text, reglas as list, porDefecto as text) as text =>
+				        let
+				            Coincide = List.Select(reglas, (r) => List.AnyTrue(List.Transform(r{1}, (k) => Text.Contains(texto, k))))
+				        in
+				            if List.IsEmpty(Coincide) then porDefecto else Coincide{0}{0},
+
+				    Hoja = Origen{[Item="Incidencias",Kind="Sheet"]}[Data],
+				    Encabezados = Table.PromoteHeaders(Hoja, [PromoteAllScalars=true]),
+				    Seleccion = Table.SelectColumns(Encabezados, {"Tipo", "Alcance", "idContrato", "CodigoProceso", "Hoja", "Campo", "Detalle"}),
+				    Tipos = Table.TransformColumnTypes(Seleccion, {{"Tipo", type text}, {"Alcance", type text}, {"idContrato", type text},
+				        {"CodigoProceso", type text}, {"Hoja", type text}, {"Campo", type text}, {"Detalle", type text}})
+				in
+				    Tipos
+
+	annotation PBI_ResultType = Table

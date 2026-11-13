@@ -1,0 +1,91 @@
+table DimMapeoColumnas
+	lineageTag: bed6131c-c661-53de-a2ce-efa25ab3e28c
+
+	column Hoja
+		dataType: string
+		lineageTag: f4dff383-70d8-5517-9730-a8e86c186050
+		summarizeBy: none
+		sourceColumn: Hoja
+
+		annotation SummarizationSetBy = Automatic
+
+	column Columna
+		dataType: string
+		lineageTag: 33e15c76-8684-5a25-a06a-6a9a488f26e9
+		summarizeBy: none
+		sourceColumn: Columna
+
+		annotation SummarizationSetBy = Automatic
+
+	column Estado
+		dataType: string
+		lineageTag: ec9905e4-344f-5b45-8955-f24467ea0483
+		summarizeBy: none
+		sourceColumn: Estado
+		sortByColumn: 'Orden estado'
+
+		annotation SummarizationSetBy = Automatic
+
+	column Origen
+		dataType: string
+		lineageTag: a6fe5b6f-870d-5311-8390-49efa15e97fb
+		summarizeBy: none
+		sourceColumn: Origen
+
+		annotation SummarizationSetBy = Automatic
+
+	column Regla
+		dataType: string
+		lineageTag: 4761d082-164a-5219-b8ff-4ed053e0e95d
+		summarizeBy: none
+		sourceColumn: Regla
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Orden estado'
+		dataType: int64
+		isHidden
+		lineageTag: d20a8b4c-402c-59bd-a678-c19181a75360
+		summarizeBy: none
+		sourceColumn: Orden estado
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Con dato desde la API'
+		dataType: string
+		lineageTag: 45442c99-4b6d-5126-b142-0ede7c4da0ea
+		summarizeBy: none
+		sourceColumn: Con dato desde la API
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimMapeoColumnas = m
+		mode: import
+		source =
+				let
+
+				    Origen = Excel.Workbook(File.Contents(RutaFuente), null, true),
+				    Texto = (x) => if x = null then "" else Text.From(x),
+				    Clasificar = (texto as text, reglas as list, porDefecto as text) as text =>
+				        let
+				            Coincide = List.Select(reglas, (r) => List.AnyTrue(List.Transform(r{1}, (k) => Text.Contains(texto, k))))
+				        in
+				            if List.IsEmpty(Coincide) then porDefecto else Coincide{0}{0},
+
+				    Hoja = Origen{[Item="Resumen",Kind="Sheet"]}[Data],
+				    Inicio = List.PositionOf(List.Transform(Hoja[Column1], Texto), "Mapeo de columnas"),
+				    Desde = Table.Skip(Hoja, Inicio + 1),
+				    Encabezados = Table.PromoteHeaders(Desde, [PromoteAllScalars=true]),
+				    Seleccion = Table.SelectColumns(Encabezados, {"Hoja", "Columna", "Estado", "Origen", "Regla"}),
+				    Filas = Table.SelectRows(Seleccion, each [Columna] <> null and Text.Trim(Texto([Columna])) <> ""),
+				    Tipos = Table.TransformColumnTypes(Filas, {{"Hoja", type text}, {"Columna", type text}, {"Estado", type text},
+				        {"Origen", type text}, {"Regla", type text}}),
+				    Orden = Table.AddColumn(Tipos, "Orden estado", each
+				        if [Estado] = "Mapeado" then 1 else if [Estado] = "Trazabilidad" then 2 else if [Estado] = "Provisional" then 3
+				        else if [Estado] = "Sin fuente" then 4 else if [Estado] = "Manual GRECO" then 5 else 6, Int64.Type),
+				    Disponible = Table.AddColumn(Orden, "Con dato desde la API", each
+				        if List.Contains({"Mapeado", "Trazabilidad", "Provisional"}, [Estado]) then "Sí" else "No", type text)
+				in
+				    Disponible
+
+	annotation PBI_ResultType = Table

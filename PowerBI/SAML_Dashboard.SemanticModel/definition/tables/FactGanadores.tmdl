@@ -1,0 +1,99 @@
+table FactGanadores
+	lineageTag: 82f631f4-65bb-518f-9927-8749a29fc358
+
+	column idContrato
+		dataType: string
+		isHidden
+		lineageTag: d092c180-bf09-5a53-a35e-5c1449e20abb
+		summarizeBy: none
+		sourceColumn: idContrato
+
+		annotation SummarizationSetBy = Automatic
+
+	column CodigoProceso
+		dataType: string
+		lineageTag: 9c663b03-1662-5864-9fdd-4ff7b23bd213
+		summarizeBy: none
+		sourceColumn: CodigoProceso
+
+		annotation SummarizationSetBy = Automatic
+
+	column Orden
+		dataType: int64
+		formatString: 0
+		lineageTag: 1d3860aa-341b-59dc-808c-d59de9011af8
+		summarizeBy: none
+		sourceColumn: Orden
+
+		annotation SummarizationSetBy = Automatic
+
+	column Empresa
+		dataType: string
+		lineageTag: a19ed0e4-9960-591f-a788-29ce665df34f
+		summarizeBy: none
+		sourceColumn: Empresa
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Es consorcio'
+		dataType: string
+		lineageTag: fb062053-b3d9-5de7-8bb2-76188bfe5d77
+		summarizeBy: none
+		sourceColumn: Es consorcio
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Está en proponentes'
+		dataType: string
+		lineageTag: 2ddcbfcf-0a89-5ac0-be0a-fdc5b0c695a4
+		summarizeBy: none
+		sourceColumn: Está en proponentes
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Repeticiones en origen'
+		dataType: int64
+		formatString: 0
+		lineageTag: 748b03c5-8459-51b8-a30b-f1ccb8fde5c5
+		summarizeBy: none
+		sourceColumn: Repeticiones en origen
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Tipo de ganador'
+		dataType: string
+		lineageTag: 75550fcb-2596-588d-9202-666432b0d518
+		summarizeBy: none
+		sourceColumn: Tipo de ganador
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactGanadores = m
+		mode: import
+		source =
+				let
+
+				    Origen = Excel.Workbook(File.Contents(RutaFuente), null, true),
+				    Texto = (x) => if x = null then "" else Text.From(x),
+				    Clasificar = (texto as text, reglas as list, porDefecto as text) as text =>
+				        let
+				            Coincide = List.Select(reglas, (r) => List.AnyTrue(List.Transform(r{1}, (k) => Text.Contains(texto, k))))
+				        in
+				            if List.IsEmpty(Coincide) then porDefecto else Coincide{0}{0},
+
+				    Hoja = Origen{[Item="Ganadores",Kind="Sheet"]}[Data],
+				    Encabezados = Table.PromoteHeaders(Hoja, [PromoteAllScalars=true]),
+				    Seleccion = Table.SelectColumns(Encabezados, {"idContrato", "CodigoProceso", "Orden", "Empresa", "Es consorcio (origen)",
+				        "Está en proponentes", "Repeticiones en origen"}),
+				    Renombrado = Table.RenameColumns(Seleccion, {{"Es consorcio (origen)", "Es consorcio"}}),
+				    Tipos = Table.TransformColumnTypes(Renombrado, {{"idContrato", type text}, {"CodigoProceso", type text},
+				        {"Orden", Int64.Type}, {"Empresa", type text}, {"Es consorcio", type text}, {"Está en proponentes", type text},
+				        {"Repeticiones en origen", Int64.Type}}),
+				    Limpia = Table.TransformColumns(Tipos, {{"Empresa", each Text.Trim(Texto(_)), type text}}),
+				    TipoGanador = Table.AddColumn(Limpia, "Tipo de ganador", each
+				        if [Es consorcio] = "Sí" then "Consorcio o UT"
+				        else if [Es consorcio] = "No" then "Empresa individual" else "Sin dato", type text)
+				in
+				    TipoGanador
+
+	annotation PBI_ResultType = Table

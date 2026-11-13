@@ -1,0 +1,102 @@
+table DimCalendario
+	lineageTag: c9434f48-3efa-5c6c-b3da-6fd59bc4ce12
+	dataCategory: Time
+
+	column Date
+		dataType: dateTime
+		isNameInferred
+		isKey
+		formatString: dd/mm/yyyy
+		lineageTag: 54c5d65c-2081-5de5-a2c1-9ef88b34a4ce
+		summarizeBy: none
+		sourceColumn: [Date]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Año
+		dataType: int64
+		isNameInferred
+		formatString: 0
+		lineageTag: 3ec4b0d5-fd0e-557a-8113-9d42c77ef401
+		summarizeBy: none
+		sourceColumn: [Año]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Mes num'
+		dataType: int64
+		isNameInferred
+		formatString: 0
+		isHidden
+		lineageTag: fcdd2e76-938d-593a-8625-d50a9046281d
+		summarizeBy: none
+		sourceColumn: [Mes num]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Mes
+		dataType: string
+		isNameInferred
+		lineageTag: aae37132-15d9-52ea-ac08-01b308810969
+		summarizeBy: none
+		sourceColumn: [Mes]
+		sortByColumn: 'Mes num'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Año mes num'
+		dataType: int64
+		isNameInferred
+		formatString: 0
+		isHidden
+		lineageTag: f889f6bd-8f91-559e-a328-9be8569bf071
+		summarizeBy: none
+		sourceColumn: [Año mes num]
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Mes año'
+		dataType: string
+		isNameInferred
+		lineageTag: deef4eb8-c113-5119-b3a8-393d484aa3d9
+		summarizeBy: none
+		sourceColumn: [Mes año]
+		sortByColumn: 'Año mes num'
+
+		annotation SummarizationSetBy = Automatic
+
+	column Trimestre
+		dataType: string
+		isNameInferred
+		lineageTag: fbc805ba-cb4b-5dfa-915c-66fa192277b0
+		summarizeBy: none
+		sourceColumn: [Trimestre]
+
+		annotation SummarizationSetBy = Automatic
+
+	column Semana
+		dataType: int64
+		isNameInferred
+		formatString: 0
+		lineageTag: 86f06262-ef63-57f0-b25a-2a8b4148531b
+		summarizeBy: none
+		sourceColumn: [Semana]
+
+		annotation SummarizationSetBy = Automatic
+
+	partition DimCalendario = calculated
+		mode: import
+		source =
+				VAR Inicio = DATE(YEAR(MIN(FactProcesos[Fecha publicación (día)])), 1, 1)
+				VAR Fin = DATE(YEAR(MAX(FactProcesos[Fecha publicación (día)])), 12, 31)
+				RETURN
+				    ADDCOLUMNS(
+				        CALENDAR(Inicio, Fin),
+				        "Año", YEAR([Date]),
+				        "Mes num", MONTH([Date]),
+				        "Mes", FORMAT([Date], "mmm"),
+				        "Año mes num", YEAR([Date]) * 100 + MONTH([Date]),
+				        "Mes año", FORMAT([Date], "mmm yyyy"),
+				        "Trimestre", "T" & QUARTER([Date]),
+				        "Semana", WEEKNUM([Date], 2)
+				    )
