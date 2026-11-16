@@ -1,0 +1,371 @@
+table FactProcesos
+	lineageTag: ee1fdf80-3312-5994-9bee-7da85e1ee029
+
+	column idContrato
+		dataType: string
+		lineageTag: 2b8dc8b4-08be-55ef-815c-eaa877e47d4a
+		summarizeBy: none
+		sourceColumn: idContrato
+
+		annotation SummarizationSetBy = Automatic
+
+	column CodigoProceso
+		dataType: string
+		lineageTag: e5ad2f2d-4e0b-599d-b7ae-17c568d40cf4
+		summarizeBy: none
+		sourceColumn: CodigoProceso
+
+		annotation SummarizationSetBy = Automatic
+
+	column Entidad
+		dataType: string
+		lineageTag: a4428c3d-97a3-57fb-b70c-6078ed27b05f
+		summarizeBy: none
+		sourceColumn: Entidad
+
+		annotation SummarizationSetBy = Automatic
+
+	column Adjudicatarios
+		dataType: string
+		lineageTag: b5c47293-b46c-531d-ad1b-d8fa897172a9
+		summarizeBy: none
+		sourceColumn: Adjudicatarios
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Valor (MM)'
+		dataType: double
+		formatString: #,0.0
+		lineageTag: ecb33a32-af2e-5c29-8372-3e18ecd53b1c
+		summarizeBy: sum
+		sourceColumn: Valor (MM)
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Valor (pesos)'
+		dataType: double
+		formatString: #,0
+		isHidden
+		lineageTag: c2caec57-d98f-5d44-a2d5-b735b6208951
+		summarizeBy: sum
+		sourceColumn: Valor (pesos)
+
+		annotation SummarizationSetBy = Automatic
+
+	column Fuente
+		dataType: string
+		lineageTag: 70ed63fe-5878-5342-8c22-22ef076bd779
+		summarizeBy: none
+		sourceColumn: Fuente
+
+		annotation SummarizationSetBy = Automatic
+
+	column Enlace
+		dataType: string
+		dataCategory: WebUrl
+		lineageTag: 50c87374-3b42-5ee7-9866-2eb59d3927f4
+		summarizeBy: none
+		sourceColumn: Enlace
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Nombre del proceso'
+		dataType: string
+		lineageTag: 216301d1-b5c6-5467-9f1e-30edbd2e84bb
+		summarizeBy: none
+		sourceColumn: Nombre del proceso
+
+		annotation SummarizationSetBy = Automatic
+
+	column Objeto
+		dataType: string
+		lineageTag: 9cba0f2a-6869-5b21-b3bd-f7eeaf666a5c
+		summarizeBy: none
+		sourceColumn: Objeto
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Fecha publicación'
+		dataType: dateTime
+		formatString: dd/mm/yyyy hh:nn
+		lineageTag: d96f5720-6cb3-55a0-bca6-a4bdf75ed2f1
+		summarizeBy: none
+		sourceColumn: Fecha publicación
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Fecha cierre'
+		dataType: dateTime
+		formatString: dd/mm/yyyy hh:nn
+		lineageTag: ea2ce995-e266-5d1e-89cc-b7922571f6fa
+		summarizeBy: none
+		sourceColumn: Fecha cierre
+
+		annotation SummarizationSetBy = Automatic
+
+	column Ubicación
+		dataType: string
+		lineageTag: fd793e7a-cd86-5fe8-bf01-fe8c163d9b62
+		summarizeBy: none
+		sourceColumn: Ubicación
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Num. ganadores'
+		dataType: int64
+		formatString: 0
+		lineageTag: 1f83fe9f-2c47-5fb6-b12d-afcaa8435b0e
+		summarizeBy: sum
+		sourceColumn: Num. ganadores
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Num. proponentes'
+		dataType: int64
+		formatString: 0
+		lineageTag: 79518c5b-f89e-5d40-8b32-9d748b70ad1d
+		summarizeBy: sum
+		sourceColumn: Num. proponentes
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Adjudicación programada'
+		dataType: string
+		lineageTag: cfa42d57-3a79-5462-bc9a-c53e0675cc89
+		summarizeBy: none
+		sourceColumn: Adjudicación programada
+
+		annotation SummarizationSetBy = Automatic
+
+	column Estado
+		dataType: string
+		lineageTag: 99e77ff6-3ce2-5028-a505-1fa44c001161
+		summarizeBy: none
+		sourceColumn: Estado
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Fecha extracción'
+		dataType: dateTime
+		formatString: dd/mm/yyyy hh:nn
+		lineageTag: 0b163e2b-e6e9-5969-bfac-b0b65237794d
+		summarizeBy: none
+		sourceColumn: Fecha extracción
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Clasificación SAML de la entidad contratante por palabras clave del nombre.
+	column Sector
+		dataType: string
+		lineageTag: b91dc148-eef6-5525-8034-c6db3bb35c02
+		summarizeBy: none
+		sourceColumn: Sector
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Modalidad de selección resumida desde 'Nombre (origen)'.
+	column Modalidad
+		dataType: string
+		lineageTag: c06b168d-a235-52df-8012-f29bc9e2a638
+		summarizeBy: none
+		sourceColumn: Modalidad
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Clasificación SAML por palabras clave del objeto del contrato (orientativa).
+	column 'Tipo de intervención'
+		dataType: string
+		lineageTag: 04fac678-6fdc-5a7a-9a96-60307b3bdcec
+		summarizeBy: none
+		sourceColumn: Tipo de intervención
+
+		annotation SummarizationSetBy = Automatic
+
+	/// Resumen de 'Ubicación (origen)'.
+	column 'Alcance territorial'
+		dataType: string
+		lineageTag: 249c667e-3279-5496-9739-973a52cc1bea
+		summarizeBy: none
+		sourceColumn: Alcance territorial
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Rango de valor'
+		dataType: string
+		lineageTag: e4298f84-26c1-5ec5-88b1-4e03d705f112
+		summarizeBy: none
+		sourceColumn: Rango de valor
+		sortByColumn: 'Orden rango valor'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Orden rango valor'
+		dataType: int64
+		isHidden
+		lineageTag: 3c647fb4-7dca-5204-a9f0-ff2294b8f3da
+		summarizeBy: none
+		sourceColumn: Orden rango valor
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Nivel de competencia'
+		dataType: string
+		lineageTag: 8982201d-e6ce-5c47-a6ac-6c13a8b2648f
+		summarizeBy: none
+		sourceColumn: Nivel de competencia
+		sortByColumn: 'Orden competencia'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Orden competencia'
+		dataType: int64
+		isHidden
+		lineageTag: 1d2fa4b2-a7c6-52ef-b40d-4eea49df22c2
+		summarizeBy: none
+		sourceColumn: Orden competencia
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Resultado de adjudicación'
+		dataType: string
+		lineageTag: 9cfc7cab-4210-5874-a036-c704d9969a29
+		summarizeBy: none
+		sourceColumn: Resultado de adjudicación
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Fecha publicación (día)'
+		dataType: dateTime
+		formatString: dd/mm/yyyy
+		lineageTag: ae2169a1-2a62-5560-9874-9612e430e5bb
+		summarizeBy: none
+		sourceColumn: Fecha publicación (día)
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Días publicación a cierre'
+		dataType: int64
+		formatString: 0
+		lineageTag: 4f2d216a-287c-56d8-a384-a44a0b8ae604
+		summarizeBy: none
+		sourceColumn: Días publicación a cierre
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Objeto (resumen)'
+		dataType: string
+		lineageTag: b1575d7d-b0a7-59c6-8585-260280816c6c
+		summarizeBy: none
+		sourceColumn: Objeto (resumen)
+
+		annotation SummarizationSetBy = Automatic
+
+	partition FactProcesos = m
+		mode: import
+		source =
+				let
+
+				    Origen = Excel.Workbook(File.Contents(RutaFuente), null, true),
+				    Texto = (x) => if x = null then "" else Text.From(x),
+				    Clasificar = (texto as text, reglas as list, porDefecto as text) as text =>
+				        let
+				            Coincide = List.Select(reglas, (r) => List.AnyTrue(List.Transform(r{1}, (k) => Text.Contains(texto, k))))
+				        in
+				            if List.IsEmpty(Coincide) then porDefecto else Coincide{0}{0},
+
+				    Hoja = Origen{[Item="Datos",Kind="Sheet"]}[Data],
+				    Encabezados = Table.PromoteHeaders(Hoja, [PromoteAllScalars=true]),
+				    Seleccion = Table.SelectColumns(Encabezados, {
+				        "idContrato", "CodigoProceso", "Entidad", "Empresa", "Valor Millones", "Valor (origen, pesos)",
+				        "Fuente", "Enlace", "Nombre (origen)", "Objeto (origen)", "Fecha publicación (origen)",
+				        "Fecha vencimiento (origen)", "Ubicación (origen)", "Num. ganadores", "Num. proponentes",
+				        "Adjudicación programada (cronograma)", "Estado (origen)", "Fecha extracción"}),
+				    Renombrado = Table.RenameColumns(Seleccion, {
+				        {"Empresa", "Adjudicatarios"}, {"Valor Millones", "Valor (MM)"}, {"Valor (origen, pesos)", "Valor (pesos)"},
+				        {"Nombre (origen)", "Nombre del proceso"}, {"Objeto (origen)", "Objeto"},
+				        {"Fecha publicación (origen)", "Fecha publicación"}, {"Fecha vencimiento (origen)", "Fecha cierre"},
+				        {"Ubicación (origen)", "Ubicación"}, {"Adjudicación programada (cronograma)", "Adjudicación programada"},
+				        {"Estado (origen)", "Estado"}}),
+				    Tipos = Table.TransformColumnTypes(Renombrado, {
+				        {"idContrato", type text}, {"CodigoProceso", type text}, {"Entidad", type text}, {"Adjudicatarios", type text},
+				        {"Valor (MM)", type number}, {"Valor (pesos)", type number}, {"Fuente", type text}, {"Enlace", type text},
+				        {"Nombre del proceso", type text}, {"Objeto", type text}, {"Fecha publicación", type datetime},
+				        {"Fecha cierre", type datetime}, {"Ubicación", type text}, {"Num. ganadores", Int64.Type},
+				        {"Num. proponentes", Int64.Type}, {"Adjudicación programada", type text}, {"Estado", type text},
+				        {"Fecha extracción", type datetime}}),
+				    EntidadLimpia = Table.TransformColumns(Tipos, {{"Entidad", each Text.Trim(Text.Trim(Text.Trim(Texto(_)), {"*", "+", "/", "-", "(", ")", " "})), type text}}),
+				    ReglasSector = {
+				        {"Salud", {"SALUD", "HOSPITAL", "SUBRED"}},
+				        {"Defensa y seguridad", {"ARMADA", "EJERCITO", "EJÉRCITO", "FUERZA", "MILITAR", "POLICIA", "POLICÍA", "CARABINEROS",
+				            "AEREO", "AÉREO", "GUERRA", "DEFENSA", "ANTINARCOTICOS", "DITRA", "DMBOG", "ECSAN", "CENAC", "INTELIGENCIA",
+				            "INTERPOL", "UNP", "CASAS FISCALES", "RECLUTAMIENTO"}},
+				        {"Justicia, control y registro", {"FISCAL", "PROCURADUR", "JUDICIAL", "DESAJ", "JEP", "USPEC", "PENITENCI",
+				            "REGISTRADUR", "NOTARIADO", "INVALIDEZ", "MIGRACION", "MIGRACIÓN", "RESTITUCION", "RESTITUCIÓN"}},
+				        {"Educación y cultura", {"EDUCACI", "UNIVERSIDAD", "ESAP", "SENA ", "CULTURA", "INRAVISI"}},
+				        {"Movilidad e infraestructura", {"INVIAS", "AEROCIVIL", "CAMINOS", "TRANSMILENIO", "DESARROLLO URBANO",
+				            "RENOVACION", "RENOVACIÓN", "IDUVI", "PROYECTOS DE CUNDINAMARCA", "FONTUR"}},
+				        {"Gobierno distrital y local", {"ALCALDIA LOCAL", "ALCALDÍA LOCAL", "DESARROLLO LOCAL", "DISTRITAL", "DISTRITO",
+				            "BOMBEROS"}},
+				        {"Gobierno departamental y municipal", {"DEPARTAMENTO DE CUNDINAMARCA", "MUNICIPIO", "MUNICIPAL"}}
+				    },
+				    Sector = Table.AddColumn(EntidadLimpia, "Sector", each Clasificar(Text.Upper([Entidad]), ReglasSector, "Otras entidades nacionales"), type text),
+				    Modalidad = Table.AddColumn(Sector, "Modalidad", each
+				        let t = Text.Lower(Texto([Nombre del proceso])) in
+				        if Text.Contains(t, "subasta") then "Subasta inversa"
+				        else if Text.Contains(t, "menor cuant") then "Selección abreviada"
+				        else if Text.Contains(t, "obra pública") or Text.Contains(t, "obra publica") then "Licitación de obra pública"
+				        else if Text.Contains(t, "régimen especial") or Text.Contains(t, "regimen especial") then "Régimen especial"
+				        else if Text.StartsWith(t, "licitaci") then "Licitación pública"
+				        else "Otra modalidad", type text),
+				    ReglasIntervencion = {
+				        {"Construcción", {"construcci"}},
+				        {"Mejoramiento y rehabilitación", {"mejoramiento", "rehabilit", "reparaci", "recuperaci", "reforzamiento"}},
+				        {"Adecuación", {"adecuaci", "remodelaci"}},
+				        {"Mantenimiento", {"mantenimiento"}},
+				        {"Suministro e instalación", {"suministro", "instalaci"}},
+				        {"Estudios y diseños", {"estudios", "diseño", "diseno"}}
+				    },
+				    Intervencion = Table.AddColumn(Modalidad, "Tipo de intervención", each Clasificar(Text.Lower(Texto([Objeto])), ReglasIntervencion, "Otras obras"), type text),
+				    Alcance = Table.AddColumn(Intervencion, "Alcance territorial", each
+				        let u = Texto([Ubicación]), deps = List.Count(Text.Split(u, ";")) in
+				        if Text.Contains(Text.Lower(u), "todo el pais") or Text.Contains(Text.Lower(u), "todo el país") or deps >= 5 then "Nacional"
+				        else if deps > 1 then "Varios departamentos"
+				        else if u = "Cundinamarca : Bogotá D.C." then "Bogotá D.C."
+				        else if Text.Contains(u, "Bogotá") then "Bogotá y municipios"
+				        else if Text.StartsWith(u, "Cundinamarca") then "Municipios de Cundinamarca"
+				        else "Otros departamentos", type text),
+				    RangoValor = Table.AddColumn(Alcance, "Rango de valor", each
+				        let v = [#"Valor (MM)"] in
+				        if v = null then "Sin valor"
+				        else if v < 500 then "< 500 MM"
+				        else if v < 1000 then "500 – 1.000 MM"
+				        else if v < 5000 then "1.000 – 5.000 MM"
+				        else if v < 20000 then "5.000 – 20.000 MM"
+				        else "> 20.000 MM", type text),
+				    OrdenRango = Table.AddColumn(RangoValor, "Orden rango valor", each
+				        let v = [#"Valor (MM)"] in
+				        if v = null then 6 else if v < 500 then 1 else if v < 1000 then 2 else if v < 5000 then 3 else if v < 20000 then 4 else 5, Int64.Type),
+				    Competencia = Table.AddColumn(OrdenRango, "Nivel de competencia", each
+				        let p = [#"Num. proponentes"] in
+				        if p = null or p = 0 then "Sin dato"
+				        else if p = 1 then "1 proponente"
+				        else if p <= 5 then "2 – 5"
+				        else if p <= 15 then "6 – 15"
+				        else if p <= 50 then "16 – 50"
+				        else "Más de 50", type text),
+				    OrdenCompetencia = Table.AddColumn(Competencia, "Orden competencia", each
+				        let p = [#"Num. proponentes"] in
+				        if p = null or p = 0 then 6 else if p = 1 then 1 else if p <= 5 then 2 else if p <= 15 then 3 else if p <= 50 then 4 else 5, Int64.Type),
+				    Resultado = Table.AddColumn(OrdenCompetencia, "Resultado de adjudicación", each
+				        let g = [#"Num. ganadores"] in
+				        if g = null or g = 0 then "Sin ganador registrado" else if g = 1 then "Ganador único" else "Varios ganadores", type text),
+				    FechaDia = Table.AddColumn(Resultado, "Fecha publicación (día)", each if [Fecha publicación] = null then null else DateTime.Date([Fecha publicación]), type date),
+				    Dias = Table.AddColumn(FechaDia, "Días publicación a cierre", each
+				        if [Fecha publicación] = null or [Fecha cierre] = null then null
+				        else Duration.Days(DateTime.Date([Fecha cierre]) - DateTime.Date([Fecha publicación])), Int64.Type),
+				    ObjetoCorto = Table.AddColumn(Dias, "Objeto (resumen)", each
+				        let o = Text.Trim(Texto([Objeto])) in if Text.Length(o) > 95 then Text.Start(o, 92) & "…" else o, type text)
+				in
+				    ObjetoCorto
+
+	annotation PBI_ResultType = Table

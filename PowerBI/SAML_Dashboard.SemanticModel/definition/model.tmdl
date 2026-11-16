@@ -1,0 +1,21 @@
+model Model
+	culture: es-CO
+	defaultPowerBIDataSourceVersion: powerBI_V3
+	discourageImplicitMeasures
+	sourceQueryCulture: es-CO
+	dataAccessOptions
+		legacyRedirects
+		returnErrorValuesAsNull
+
+annotation __PBI_TimeIntelligenceEnabled = 0
+
+annotation PBI_QueryOrder = ["RutaFuente","Medidas","FactProcesos","FactGanadores","FactIncidencias","DimMapeoColumnas"]
+
+annotation PBIDesktopVersion = 2.153.1206.0
+
+ref table Medidas
+ref table FactProcesos
+ref table FactGanadores
+ref table FactIncidencias
+ref table DimMapeoColumnas
+ref table DimCalendario

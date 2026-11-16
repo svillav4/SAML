@@ -1,0 +1,12 @@
+relationship af5f34c5-78b1-55a2-a2a8-6520a0ad3921
+	crossFilteringBehavior: bothDirections
+	fromColumn: FactGanadores.idContrato
+	toColumn: FactProcesos.idContrato
+
+relationship 8bb5af82-459f-5002-b6ce-06393663936d
+	fromColumn: FactIncidencias.idContrato
+	toColumn: FactProcesos.idContrato
+
+relationship 6cefd6b8-5e2c-5bdf-aa93-860f692941fc
+	fromColumn: FactProcesos.'Fecha publicación (día)'
+	toColumn: DimCalendario.Date

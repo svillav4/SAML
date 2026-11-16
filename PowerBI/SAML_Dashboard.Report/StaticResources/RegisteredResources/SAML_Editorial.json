@@ -1,0 +1,144 @@
+{
+  "name": "SAML Editorial",
+  "dataColors": [
+    "#E8A33D",
+    "#2F5D62",
+    "#B5562B",
+    "#8C8F6B",
+    "#5F635E",
+    "#D9C29C",
+    "#9A5E12",
+    "#4F7A8A",
+    "#C9C2B6",
+    "#1E2122"
+  ],
+  "foreground": "#1E2122",
+  "foregroundNeutralSecondary": "#5F635E",
+  "foregroundNeutralTertiary": "#A9ACA6",
+  "background": "#FFFFFF",
+  "backgroundLight": "#F6F3EE",
+  "backgroundNeutral": "#E1DBD0",
+  "tableAccent": "#E8A33D",
+  "good": "#2F5D62",
+  "neutral": "#E8A33D",
+  "bad": "#B5562B",
+  "maximum": "#9A5E12",
+  "center": "#E8A33D",
+  "minimum": "#F6E3C2",
+  "null": "#C9C2B6",
+  "hyperlink": "#2F5D62",
+  "visitedHyperlink": "#2F5D62",
+  "textClasses": {
+    "callout": {
+      "fontSize": 26,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#1E2122"
+    },
+    "title": {
+      "fontSize": 12,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#1E2122"
+    },
+    "header": {
+      "fontSize": 11,
+      "fontFace": "Segoe UI Semibold",
+      "color": "#1E2122"
+    },
+    "label": {
+      "fontSize": 9,
+      "fontFace": "Segoe UI",
+      "color": "#5F635E"
+    }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "background": [
+          {
+            "show": false
+          }
+        ],
+        "border": [
+          {
+            "show": false
+          }
+        ],
+        "dropShadow": [
+          {
+            "show": false
+          }
+        ],
+        "title": [
+          {
+            "show": false,
+            "fontColor": {
+              "solid": {
+                "color": "#1E2122"
+              }
+            },
+            "fontFamily": "Segoe UI Semibold"
+          }
+        ],
+        "visualHeader": [
+          {
+            "background": {
+              "solid": {
+                "color": "#FFFFFF"
+              }
+            },
+            "foreground": {
+              "solid": {
+                "color": "#5F635E"
+              }
+            },
+            "border": {
+              "solid": {
+                "color": "#E1DBD0"
+              }
+            },
+            "transparency": 0
+          }
+        ],
+        "visualTooltip": [
+          {
+            "titleFontColor": {
+              "solid": {
+                "color": "#5F635E"
+              }
+            },
+            "valueFontColor": {
+              "solid": {
+                "color": "#1E2122"
+              }
+            },
+            "background": {
+              "solid": {
+                "color": "#FFFFFF"
+              }
+            },
+            "fontSize": 9
+          }
+        ]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [
+          {
+            "transparency": 0
+          }
+        ],
+        "outspace": [
+          {
+            "color": {
+              "solid": {
+                "color": "#ECE8E1"
+              }
+            },
+            "transparency": 0
+          }
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,6 @@
+/// Ruta del Excel fuente. Cambiarla en Power Query (Transformar datos > Parámetros) cuando llegue la salida final de SAML.
+expression RutaFuente = "C:\Users\ASUS\Downloads\SAML_PowerBI\fuentes_powerbi\licitaciones_intermedio_20261012_172632.xlsx" meta [IsParameterQuery=true, Type="Text", IsParameterQueryRequired=true]
+	lineageTag: 08d79d00-49ee-55d6-99eb-f3567846262b
+
+	annotation PBI_ResultType = Text
+
